@@ -51,7 +51,6 @@ import { updateBot } from './ai/botAI';
 import { render } from './renderer/GameRenderer';
 import { KeyboardInput } from './input/KeyboardInput';
 import { TouchInput } from './input/TouchInput';
-import { useLobbyStore } from '@/stores/useLobbyStore';
 
 export class GameEngine {
   private canvas: HTMLCanvasElement;
@@ -407,7 +406,7 @@ export class GameEngine {
 
     msg.players.forEach((rp: NormalizedPlayer) => {
       let local = gs.players.find((p: PlayerState) => p.peerId === rp.peerId);
-      
+
       const isActuallyMe = rp.peerId === (this.myPeerId || '');
 
       if (!local) {
@@ -429,16 +428,9 @@ export class GameEngine {
       local.vx = denormVx(rp.nvx);
       local.vy = denormVy(rp.nvy);
       local.kickFlash = rp.kickFlash;
+      local.nick = rp.nick; // Sync nick
+      local.team = rp.team; // Sync team
       local.isMe = isActuallyMe; // Ensure self-identification is always correct
-
-      if (local.team !== rp.team) {
-        local.team = rp.team;
-        if (local.isMe && local.peerId) {
-          useLobbyStore
-            .getState()
-            .addToLobby(local.peerId, local.nick || 'Oyuncu', local.team);
-        }
-      }
     });
 
     if (msg.players.length < gs.players.length) {
@@ -480,6 +472,7 @@ export class GameEngine {
         nvy: normVy(p.vy),
         kickFlash: p.kickFlash,
         peerId: p.peerId || '',
+        nick: p.nick || '?',
         team: p.team,
       })),
       scoreRed: gs.scoreRed,
