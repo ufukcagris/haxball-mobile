@@ -10,7 +10,14 @@ import { getSharedPeer } from './CreateRoomScreen';
 import { GuestManager } from '@/multiplayer/GuestManager';
 
 let sharedGuest: GuestManager | null = null;
-export function getSharedGuest(): GuestManager | null { return sharedGuest; }
+export function getSharedGuest(): GuestManager | null { 
+  if (!sharedGuest) {
+    const peer = getSharedPeer();
+    sharedGuest = new GuestManager(peer);
+  }
+  return sharedGuest; 
+}
+export function resetSharedGuest(): void { sharedGuest = null; }
 
 export function JoinRoomScreen() {
   const { config, setScreen } = useAppStore();

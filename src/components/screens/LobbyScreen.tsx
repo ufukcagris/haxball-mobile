@@ -23,6 +23,22 @@ export function LobbyScreen() {
   const isHost = myRole === 'host';
   const total = ls.red.length + ls.blue.length + ls.spec.length;
 
+  // Sync guest with game start
+  useEffect(() => {
+    if (!isHost) {
+      const guest = getSharedGuest();
+      if (guest) {
+        guest.onGameStart = (players, settings) => {
+          console.log('[LobbyScreen] Guest received game_start!');
+          setScreen('game');
+        };
+        guest.onLobbyUpdate = (state) => {
+          setLobbyState(state);
+        };
+      }
+    }
+  }, [isHost, setScreen, setLobbyState]);
+
   // Broadcast lobby changes when host modifies state
   useEffect(() => {
     if (isHost) {

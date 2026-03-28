@@ -64,9 +64,14 @@ export function GameScreen() {
     // Keyboard
     engine.keyboardInput.attach(
       () => {
-        if (myRole === 'solo') {
+        // Toggle pause/menu overlay
+        const currentlyPaused = useGameStore.getState().isPaused;
+        if (!currentlyPaused) {
           useGameStore.getState().setPaused(true);
-          engine.pause();
+          if (myRole === 'solo') engine.pause();
+        } else {
+          useGameStore.getState().setPaused(false);
+          if (myRole === 'solo') engine.resume();
         }
       },
       () => engine.getLocalPlayer()
