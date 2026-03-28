@@ -140,8 +140,21 @@ export function GameScreen() {
         guestManager.onGoal = (team) => {
           engine.onGoal?.(team);
         };
-        guestManager.onGameEnd = () => {
-          engine.onEnd?.();
+        guestManager.onGameEnd = (scoreRed, scoreBlue) => {
+          // Sync end state for guests
+          useGameStore.getState().updateHUD({
+            scoreRed,
+            scoreBlue,
+            timeLeft: 0,
+            overtime: false,
+            time: config.time
+          });
+          useGameStore.getState().setEnd();
+          
+          // Guests also auto return after 3s
+          setTimeout(() => {
+            setScreen('lobby');
+          }, 3000);
         };
         guestManager.onLobbyReturn = (state) => {
           setLobbyState(state);

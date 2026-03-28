@@ -8,6 +8,7 @@ import {
 } from '@/config/constants';
 import { GameState, PlayerState, MultiPlayerInfo, HUDData, GameConfig, InputState, NormalizedState } from './types';
 import { LobbySettings, NormalizedPlayer } from '@/multiplayer/types';
+import { getSharedHost } from '@/components/screens/CreateRoomScreen';
 import { createPlayer } from './entities/createPlayer';
 import { createBall } from './entities/createBall';
 import { updateBall } from './physics/ballPhysics';
@@ -544,6 +545,11 @@ export class GameEngine {
     const gs = this.gameState;
     if (!gs || gs.over) return;
     gs.over = true;
+
+    if (this.isMulti && this.isHost) {
+      getSharedHost()?.broadcastEndGame(gs.scoreRed, gs.scoreBlue);
+    }
+
     this.onEnd?.();
   }
 

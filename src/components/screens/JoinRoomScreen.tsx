@@ -69,6 +69,8 @@ export function JoinRoomScreen() {
     const guest = getSharedGuest()!;
 
     guest.onLobbyUpdate = (state) => {
+      const p = getSharedPeer();
+      setMyPeerId(p.peerId!);
       setLobbyState(state);
       setScreen('lobby');
     };
