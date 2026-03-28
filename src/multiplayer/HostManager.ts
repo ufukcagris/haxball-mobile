@@ -6,6 +6,7 @@ import type { LobbyState, NetworkMessage, LobbySettings, MultiPlayerNetInfo, Lob
 export class HostManager {
   private peerManager: PeerManager;
   private connections: Record<string, DataConnection> = {};
+  private playerNicks: Record<string, string> = {}; // Track nicks for leave messages
   private netSendCounter = 0;
 
   public onPlayerJoined: ((pid: string, nick: string) => void) | null = null;
@@ -54,7 +55,7 @@ export class HostManager {
           const metadata = conn.metadata as { nick?: string } | undefined;
           let nick = (metadata?.nick || 'Oyuncu').trim();
 
-          // Ensure unique nick - Use top-level import and correct types
+          // Ensure unique nick
           const currentLs = useLobbyStore.getState().lobbyState;
           const allNicks = [
             ...currentLs.red.map((p: LobbyPlayer) => p.nick),
@@ -72,7 +73,12 @@ export class HostManager {
             nick = newNick;
           }
 
+          this.playerNicks[pid] = nick;
           this.onPlayerJoined?.(pid, nick);
+          
+          // System message: Joined
+          this.broadcastChat('SİSTEM', `${nick} odaya katildi`);
+          this.onChatMessage?.('SİSTEM', `${nick} odaya katildi`);
 
           // Send current lobby state immediately to the newcomer
           console.log('[HostManager] Sending initial lobby state to:', pid);
@@ -105,17 +111,8 @@ export class HostManager {
           console.log(`[HostManager] Received message from ${pid}:`, msg.type);
 
           if (msg.type === 'join') {
-            console.log(
-              `[HostManager] Player ${pid} joined with nick: ${msg.nick}`,
-            );
-            this.onPlayerJoined?.(pid, msg.nick);
-
-            // Respond immediately with the current lobby state
-            const currentLobby = useLobbyStore.getState().lobbyState;
-            conn.send({ type: 'lobby', state: currentLobby });
-            console.log(
-              '[HostManager] Sent initial lobby state in response to join message',
-            );
+            // Already handled by connection listener metadata in most cases, 
+            // but kept for fallback or re-joins if necessary.
           }
 
           if (msg.type === 'chat') {
@@ -133,8 +130,19 @@ export class HostManager {
           }
         });
 
-        conn.on('close', () => this.onPlayerLeft?.(pid));
-        conn.on('error', () => this.onPlayerLeft?.(pid));
+        const handleLeave = () => {
+          const nick = this.playerNicks[pid];
+          if (nick) {
+            this.broadcastChat('SİSTEM', `${nick} odadan ayrildi`);
+            this.onChatMessage?.('SİSTEM', `${nick} odadan ayrildi`);
+            delete this.playerNicks[pid];
+          }
+          delete this.connections[pid];
+          this.onPlayerLeft?.(pid);
+        };
+
+        conn.on('close', handleLeave);
+        conn.on('error', handleLeave);
       },
     );
   }
@@ -193,5 +201,6 @@ export class HostManager {
       }
     });
     this.connections = {};
+    this.playerNicks = {};
   }
 }
