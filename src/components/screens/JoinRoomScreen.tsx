@@ -70,6 +70,14 @@ export function JoinRoomScreen() {
     guest.onLobbyUpdate = (state) => {
       const p = getSharedPeer();
       setMyPeerId(p.peerId!);
+      
+      // Welcome message only once
+      const { addChatMessage, hasJoinedMessageShown, setHasJoinedMessageShown } = useLobbyStore.getState();
+      if (!hasJoinedMessageShown) {
+        addChatMessage('SİSTEM', 'Odaya katildin');
+        setHasJoinedMessageShown(true);
+      }
+
       setLobbyState(state);
       setScreen('lobby');
     };

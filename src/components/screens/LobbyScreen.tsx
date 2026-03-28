@@ -34,8 +34,6 @@ export function LobbyScreen({
     addToLobby,
     chatMessages,
     addChatMessage,
-    hasJoinedMessageShown,
-    setHasJoinedMessageShown,
   } = useLobbyStore();
 
   const [toast, setToast] = useState({ message: '', visible: false });
@@ -68,24 +66,31 @@ export function LobbyScreen({
   const isHost = myRole === 'host';
   const total = ls.red.length + ls.blue.length + ls.spec.length;
 
-  const triggerInGameBubble = useCallback((nick: string, message: string) => {
-    if (!activeEngine) return;
-    const all = [...ls.red, ...ls.blue, ...ls.spec];
-    const p = all.find(x => x.nick === nick);
-    if (p) {
-      activeEngine.triggerChatBubble(p.id, message);
-    }
-  }, [ls.red, ls.blue, ls.spec]);
+  const triggerInGameBubble = useCallback(
+    (nick: string, message: string) => {
+      if (!activeEngine) return;
+      const all = [...ls.red, ...ls.blue, ...ls.spec];
+      const p = all.find((x) => x.nick === nick);
+      if (p) {
+        activeEngine.triggerChatBubble(p.id, message);
+      }
+    },
+    [ls.red, ls.blue, ls.spec],
+  );
 
-  const setTypingStatus = useCallback((isTyping: boolean) => {
-    const nick = config.nick;
-    if (isHost) {
-      getSharedHost()?.broadcastTyping(nick, isTyping);
-      if (activeEngine && myPeerId) activeEngine.setTyping(myPeerId, isTyping);
-    } else {
-      getSharedGuest()?.sendTyping(nick, isTyping);
-    }
-  }, [isHost, config.nick, myPeerId]);
+  const setTypingStatus = useCallback(
+    (isTyping: boolean) => {
+      const nick = config.nick;
+      if (isHost) {
+        getSharedHost()?.broadcastTyping(nick, isTyping);
+        if (activeEngine && myPeerId)
+          activeEngine.setTyping(myPeerId, isTyping);
+      } else {
+        getSharedGuest()?.sendTyping(nick, isTyping);
+      }
+    },
+    [isHost, config.nick, myPeerId],
+  );
 
   // Auto-scroll chat
   useEffect(() => {
@@ -93,14 +98,6 @@ export function LobbyScreen({
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [chatMessages]);
-
-  // Local welcome message
-  useEffect(() => {
-    if (!hasJoinedMessageShown) {
-      addChatMessage('SİSTEM', 'Odaya katildin');
-      setHasJoinedMessageShown(true);
-    }
-  }, [addChatMessage, hasJoinedMessageShown, setHasJoinedMessageShown]);
 
   // Sync guest with game start and lobby updates
   useEffect(() => {
@@ -120,7 +117,9 @@ export function LobbyScreen({
         };
         guest.onPlayerTyping = (nick, typing) => {
           if (!activeEngine) return;
-          const p = [...ls.red, ...ls.blue, ...ls.spec].find(x => x.nick === nick);
+          const p = [...ls.red, ...ls.blue, ...ls.spec].find(
+            (x) => x.nick === nick,
+          );
           if (p) activeEngine.setTyping(p.id, typing);
         };
         guest.onNickUpdate = (newNick) => {
@@ -137,12 +136,24 @@ export function LobbyScreen({
         };
         host.onPlayerTyping = (nick, typing) => {
           if (!activeEngine) return;
-          const p = [...ls.red, ...ls.blue, ...ls.spec].find(x => x.nick === nick);
+          const p = [...ls.red, ...ls.blue, ...ls.spec].find(
+            (x) => x.nick === nick,
+          );
           if (p) activeEngine.setTyping(p.id, typing);
         };
       }
     }
-  }, [isHost, setScreen, setLobbyState, isOverlay, addChatMessage, triggerInGameBubble, ls.red, ls.blue, ls.spec]);
+  }, [
+    isHost,
+    setScreen,
+    setLobbyState,
+    isOverlay,
+    addChatMessage,
+    triggerInGameBubble,
+    ls.red,
+    ls.blue,
+    ls.spec,
+  ]);
 
   // Broadcast lobby changes when host modifies state
   useEffect(() => {
@@ -165,7 +176,9 @@ export function LobbyScreen({
 
     let currentNick = config.nick;
     if (myPeerId) {
-      const found = [...ls.red, ...ls.blue, ...ls.spec].find(p => p.id === myPeerId);
+      const found = [...ls.red, ...ls.blue, ...ls.spec].find(
+        (p) => p.id === myPeerId,
+      );
       if (found) currentNick = found.nick;
     }
 

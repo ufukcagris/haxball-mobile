@@ -85,6 +85,13 @@ export function CreateRoomScreen() {
     };
     sharedHost.setupConnectionListener();
 
+    // Welcome message only once
+    const { addChatMessage, hasJoinedMessageShown, setHasJoinedMessageShown } = useLobbyStore.getState();
+    if (!hasJoinedMessageShown) {
+      addChatMessage('SİSTEM', 'Odaya katildin');
+      setHasJoinedMessageShown(true);
+    }
+
     setScreen('lobby');
   };
 
