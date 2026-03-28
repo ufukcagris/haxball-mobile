@@ -37,6 +37,7 @@ export function LobbyScreen({
 
   const [toast, setToast] = useState({ message: '', visible: false });
   const [chatInput, setChatInput] = useState('');
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const hasJoinedRef = useRef(false);
 
@@ -218,6 +219,26 @@ export function LobbyScreen({
   };
 
   const canStart = ls.red.length > 0 || ls.blue.length > 0;
+
+  if (showExitConfirm) {
+    return (
+      <div
+        className='flex flex-col items-center justify-center gap-6 w-full h-full'
+        style={{
+          background: 'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
+        }}
+      >
+        <div className='menu-bg' />
+        <div className='text-[1.2rem] font-bold text-white z-1 text-center leading-tight'>
+          Odadan ayrilmak istedigine<br/>emin misin?
+        </div>
+        <div className='flex flex-col gap-3 w-[240px] z-1'>
+          <PlayButton onClick={leaveLobby} variant="red" className="!py-3">EVET, AYRIL</PlayButton>
+          <PlayButton onClick={() => setShowExitConfirm(false)} variant="secondary" className="!py-3">HAYIR, KAL</PlayButton>
+        </div>
+      </div>
+    );
+  }
 
   const renderTeam = (
     team: 'red' | 'blue' | 'spec',
@@ -439,7 +460,7 @@ export function LobbyScreen({
           {!isOverlay ? (
             <>
               <PlayButton
-                onClick={leaveLobby}
+                onClick={() => setShowExitConfirm(true)}
                 variant='secondary'
                 className='flex-none w-[80px] py-[12px]! text-[0.9rem]! rounded-[11px]!'
               >
