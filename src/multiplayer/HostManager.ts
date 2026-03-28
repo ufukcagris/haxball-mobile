@@ -215,7 +215,9 @@ export class HostManager {
   private sendToAll(msg: NetworkMessage): void {
     Object.values(this.connections).forEach((c) => {
       try {
-        if (c.open) c.send(msg);
+        if (c && c.open) {
+          c.send(msg);
+        }
       } catch {
         /* ignore */
       }

@@ -102,7 +102,7 @@ export class GuestManager {
   }
 
   sendInput(dx: number, dy: number, kickHeld: boolean): void {
-    if (!this.hostConn) return;
+    if (!this.hostConn || !this.hostConn.open) return;
     try {
       this.hostConn.send({ type: 'input', dx, dy, kickHeld });
     } catch {
@@ -111,7 +111,7 @@ export class GuestManager {
   }
 
   sendChat(nick: string, message: string): void {
-    if (!this.hostConn) return;
+    if (!this.hostConn || !this.hostConn.open) return;
     try {
       this.hostConn.send({ type: 'chat', nick, message });
     } catch {
@@ -120,7 +120,7 @@ export class GuestManager {
   }
 
   sendTyping(nick: string, typing: boolean): void {
-    if (!this.hostConn) return;
+    if (!this.hostConn || !this.hostConn.open) return;
     try {
       this.hostConn.send({ type: 'typing', nick, typing });
     } catch {
