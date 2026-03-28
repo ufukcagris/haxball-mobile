@@ -271,51 +271,48 @@ export class GameEngine {
     const redPlayersLobby = players.filter((p) => p.team === 'red');
     const bluePlayersLobby = players.filter((p) => p.team === 'blue');
 
-    // HELPER: Check if team composition (members or order) changed
-    const hasTeamChanged = (
-      team: 'red' | 'blue',
-      targetList: MultiPlayerInfo[],
-    ) => {
-      const currentIds = gs.players
-        .filter((p) => p.team === team)
-        .map((p) => p.peerId)
-        .join(',');
-      const targetIds = targetList.map((p) => p.id).join(',');
-      return currentIds !== targetIds;
-    };
-
-    const redChanged = hasTeamChanged('red', redPlayersLobby);
-    const blueChanged = hasTeamChanged('blue', bluePlayersLobby);
-
-    const processList = (
-      list: MultiPlayerInfo[],
-      team: 'red' | 'blue',
-      changed: boolean,
-    ) => {
-      const reversed = [...list].reverse();
-      reversed.forEach((p, i) => {
+    const processList = (list: MultiPlayerInfo[], team: 'red' | 'blue') => {
+      list.forEach((p) => {
         const existing = oldPlayers.find((op) => op.peerId === p.id);
+
+        // If already on this team, keep current simulation position
+        if (existing && existing.team === team) {
+          existing.nick = p.nick;
+          newPlayers.push(existing);
+          return;
+        }
+
+        // --- NEW PLAYER OR TEAM CHANGE ---
         const backX = team === 'red' ? gs.ox - gs.gd : gs.ox + gs.fw + gs.gd;
         const direction = team === 'red' ? 1 : -1;
-
-        // Horizontal: Sequential pushing. Vertical: Always centered.
-        const targetX = backX + direction * (i * gs.pr * 2.2 + gs.pr);
+        const targetX = backX + direction * gs.pr;
         const targetY = gs.oy + gs.fh / 2;
 
-        if (existing) {
-          // If the team members/order changed, RE-LAYOUT everyone on this team
-          // If team is same and composition is same, DON'T touch positions (kickoff preservation)
-          if (existing.team !== team || changed) {
-            existing.team = team;
-            existing.x = targetX;
-            existing.y = targetY;
-            existing.vx = 0;
-            existing.vy = 0;
+        // PUSH EFFECT: Only push teammates who are still near the spawn area
+        newPlayers.forEach((np) => {
+          if (np.team === team) {
+            const isNearBack =
+              team === 'red'
+                ? np.x < gs.ox + gs.fw * 0.15
+                : np.x > gs.ox + gs.fw * 0.85;
+
+            if (isNearBack) {
+              np.x += direction * gs.pr * 2.2;
+            }
           }
+        });
+
+        if (existing) {
+          // Team changed: move to back
+          existing.team = team;
+          existing.x = targetX;
+          existing.y = targetY;
+          existing.vx = 0;
+          existing.vy = 0;
           existing.nick = p.nick;
           newPlayers.push(existing);
         } else {
-          // New player: layout in line
+          // New joined: create at back
           const pl = createPlayer(targetX, targetY, gs.pr, team, true);
           pl.peerId = p.id;
           pl.nick = p.nick;
@@ -325,8 +322,8 @@ export class GameEngine {
       });
     };
 
-    processList(redPlayersLobby, 'red', redChanged);
-    processList(bluePlayersLobby, 'blue', blueChanged);
+    processList(redPlayersLobby, 'red');
+    processList(bluePlayersLobby, 'blue');
 
     gs.players = newPlayers;
     this.emitHUD();
