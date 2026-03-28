@@ -85,7 +85,6 @@ export function LobbyScreen({
     (isTyping: boolean) => {
       const nick = config.nick;
       if (isHost) {
-        getSharedHost()?.broadcastChat(nick, isTyping ? '...' : ''); // Actually broadcastTyping is used
         getSharedHost()?.broadcastTyping(nick, isTyping);
         if (activeEngine && myPeerId)
           activeEngine.setTyping(myPeerId, isTyping);
