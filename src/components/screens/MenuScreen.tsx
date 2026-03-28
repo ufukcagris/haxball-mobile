@@ -44,7 +44,7 @@ export function MenuScreen() {
   return (
     <div
       id="menu-screen"
-      className="flex flex-col items-center justify-center overflow-y-auto p-4 gap-2.5 w-full h-full"
+      className="flex flex-col items-center justify-center overflow-y-auto px-3 pt-4 pb-5 gap-2.5 w-full h-full"
       style={{
         background: 'radial-gradient(ellipse at 60% 20%, #0d2040 0%, #0a0e1a 70%)',
         WebkitOverflowScrolling: 'touch',
