@@ -1,5 +1,7 @@
 'use client';
 
+import { getSharedHost } from '@/components/screens/CreateRoomScreen';
+import { getSharedGuest } from '@/components/screens/JoinRoomScreen';
 import { useRef, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useGameStore } from '@/stores/useGameStore';
@@ -88,8 +90,47 @@ export function GameScreen() {
         config.diff === 'none' ? '—' : 'BOT'
       );
       engine.initSoloGame();
+    } else {
+      const redNick = lobbyState.red.map(p => p.nick).join(' & ') || 'KIRMIZI';
+      const blueNick = lobbyState.blue.map(p => p.nick).join(' & ') || 'MAVİ';
+      useGameStore.getState().setNicks(redNick, blueNick);
+
+      const players = [
+        ...lobbyState.red.map((p, i) => ({ id: p.id, nick: p.nick, team: 'red' as const, idx: i, total: lobbyState.red.length })),
+        ...lobbyState.blue.map((p, i) => ({ id: p.id, nick: p.nick, team: 'blue' as const, idx: i, total: lobbyState.blue.length }))
+      ];
+
+      engine.initMultiGame(players, lobbyState.settings, myPeerId || '', myRole === 'host');
+      
+      const hostManager = getSharedHost();
+      const guestManager = getSharedGuest();
+
+      if (myRole === 'host' && hostManager) {
+        let netSendCounter = 0;
+        engine.onSendGameState = () => {
+          netSendCounter++;
+          if (netSendCounter % 2 !== 0) return;
+          const gs = engine.getNormalizedState();
+          if (gs) hostManager.broadcastGameState({ type: 'game_state', ...gs });
+        };
+        hostManager.onRemoteInput = (pid, input) => {
+          engine.setRemoteInput(pid, input);
+        };
+      } else if (myRole === 'guest' && guestManager) {
+        engine.onSendInput = (input) => {
+          guestManager.sendInput(input.dx, input.dy, input.kickHeld);
+        };
+        guestManager.onGameState = (state) => {
+          engine.applyRemoteState(state);
+        };
+        guestManager.onGoal = (team) => {
+          engine.onGoal?.(team);
+        };
+        guestManager.onGameEnd = () => {
+          engine.onEnd?.();
+        };
+      }
     }
-    // TODO: Multi init handled from lobby
 
     engine.start();
     engineRef.current = engine;
@@ -107,7 +148,7 @@ export function GameScreen() {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [config, myRole]);
+  }, [config, myRole, lobbyState, myPeerId]);
 
   useEffect(() => {
     if (screen !== 'game') return;
