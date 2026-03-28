@@ -1,12 +1,27 @@
 'use client';
 
 import { PITCH_CONFIGS, PitchSize } from '@/config/pitchConfigs';
-import { 
-  PLAYER_RADIUS, BALL_RADIUS, KICK_POWER, 
-  FIXED_STEP, MAX_SCALE, MAX_PLAYER_SPEED, ACCEL_FACTOR, DECEL_FACTOR, 
-  JOYSTICK_DEAD, EXT_FRICTION
+import {
+  PLAYER_RADIUS,
+  BALL_RADIUS,
+  KICK_POWER,
+  FIXED_STEP,
+  MAX_SCALE,
+  MAX_PLAYER_SPEED,
+  ACCEL_FACTOR,
+  DECEL_FACTOR,
+  JOYSTICK_DEAD,
+  EXT_FRICTION,
 } from '@/config/constants';
-import { GameState, PlayerState, MultiPlayerInfo, HUDData, GameConfig, InputState, NormalizedState } from './types';
+import {
+  GameState,
+  PlayerState,
+  MultiPlayerInfo,
+  HUDData,
+  GameConfig,
+  InputState,
+  NormalizedState,
+} from './types';
 import { LobbySettings, NormalizedPlayer } from '@/multiplayer/types';
 import { getSharedHost } from '@/components/screens/CreateRoomScreen';
 import { createPlayer } from './entities/createPlayer';
@@ -14,11 +29,21 @@ import { createBall } from './entities/createBall';
 import { updateBall } from './physics/ballPhysics';
 import { resolvePlayerBallCollision } from './physics/playerBallCollision';
 import { resolvePlayerPlayerCollision } from './physics/playerPlayerCollision';
-import { resolveBallWallCollision, resolvePlayerPostCollision } from './physics/wallCollision';
-import { clampPlayerToField, applyKickoffBarrier } from './physics/fieldClamping';
+import {
+  resolveBallWallCollision,
+  resolvePlayerPostCollision,
+} from './physics/wallCollision';
+import {
+  clampPlayerToField,
+  applyKickoffBarrier,
+} from './physics/fieldClamping';
 import { updateTimer, checkOvertime } from './systems/timerSystem';
 import { checkGoal } from './systems/goalSystem';
-import { spawnGoalParticles, updateParticles, spawnParticles } from './systems/particleSystem';
+import {
+  spawnGoalParticles,
+  updateParticles,
+  spawnParticles,
+} from './systems/particleSystem';
 import { resetPositions } from './systems/kickoffSystem';
 import { applyPlayerMovement } from './physics/playerMovement';
 import { doKick } from './systems/kickSystem';
@@ -26,6 +51,7 @@ import { updateBot } from './ai/botAI';
 import { render } from './renderer/GameRenderer';
 import { KeyboardInput } from './input/KeyboardInput';
 import { TouchInput } from './input/TouchInput';
+import { useLobbyStore } from '@/stores/useLobbyStore';
 
 export class GameEngine {
   private canvas: HTMLCanvasElement;
@@ -38,7 +64,10 @@ export class GameEngine {
   private myPeerId: string | null = null;
   private isMulti = false;
   private isHost = false;
-  private remoteInputs: Record<string, { dx: number, dy: number, kickHeld: boolean }> = {};
+  private remoteInputs: Record<
+    string,
+    { dx: number; dy: number; kickHeld: boolean }
+  > = {};
 
   public onHUDUpdate: ((data: HUDData) => void) | null = null;
   public onGoal: ((team: 'red' | 'blue') => void) | null = null;
@@ -58,7 +87,9 @@ export class GameEngine {
     this.touchInput = new TouchInput();
   }
 
-  getState(): GameState | null { return this.gameState; }
+  getState(): GameState | null {
+    return this.gameState;
+  }
   getLocalPlayer(): PlayerState | null {
     if (!this.gameState) return null;
     return this.gameState.players.find((p: PlayerState) => p.isMe) || null;
@@ -75,8 +106,7 @@ export class GameEngine {
       const oldOy = gs.oy;
 
       const newScale = Math.min((W - 20) / pc.fw, (H - 20) / pc.fh, MAX_SCALE);
-      
-      // Update dimensions
+
       gs.scale = newScale;
       gs.fw = pc.fw * newScale;
       gs.fh = pc.fh * newScale;
@@ -88,15 +118,12 @@ export class GameEngine {
       gs.gd = pc.goalDepth * newScale;
       gs.wt = pc.wallT * newScale;
 
-      // Adjust positions of ball and players to stay relative to the field
       const scaleRatio = newScale / oldScale;
 
-      // Ball adjustment
       gs.ball.x = gs.ox + (gs.ball.x - oldOx) * scaleRatio;
       gs.ball.y = gs.oy + (gs.ball.y - oldOy) * scaleRatio;
       gs.ball.r = gs.br;
 
-      // Players adjustment
       gs.players.forEach((p: PlayerState) => {
         p.x = gs.ox + (p.x - oldOx) * scaleRatio;
         p.y = gs.oy + (p.y - oldOy) * scaleRatio;
@@ -110,8 +137,10 @@ export class GameEngine {
     const W = this.canvas.width;
     const H = this.canvas.height;
     const scale = Math.min((W - 20) / pc.fw, (H - 20) / pc.fh, MAX_SCALE);
-    const fw = pc.fw * scale, fh = pc.fh * scale;
-    const ox = (W - fw) / 2, oy = (H - fh) / 2;
+    const fw = pc.fw * scale,
+      fh = pc.fh * scale;
+    const ox = (W - fw) / 2,
+      oy = (H - fh) / 2;
     const pr = PLAYER_RADIUS * scale;
     const br = BALL_RADIUS * scale;
 
@@ -119,21 +148,33 @@ export class GameEngine {
       createPlayer(ox + fw * 0.28, oy + fh / 2, pr, 'red', true),
     ];
     if (this.config.diff !== 'none') {
-      players.push(createPlayer(ox + fw * 0.72, oy + fh / 2, pr, 'blue', false));
+      players.push(
+        createPlayer(ox + fw * 0.72, oy + fh / 2, pr, 'blue', false),
+      );
     }
 
     this.gameState = {
-      pc, scale, fw, fh, ox, oy,
-      pr, br,
+      pc,
+      scale,
+      fw,
+      fh,
+      ox,
+      oy,
+      pr,
+      br,
       gw: pc.goalW * scale,
       gd: pc.goalDepth * scale,
       wt: pc.wallT * scale,
-      paused: false, over: false, goalCooldown: 0,
-      timeLeft: this.config.time, timerRunning: this.config.time > 0,
-      overtime: false,
-      scoreRed: 0, scoreBlue: 0,
-      goalLimit: this.config.goalLimit || 0,
+      paused: false,
+      over: false,
+      goalCooldown: 0,
       concededTeam: null,
+      timeLeft: this.config.time,
+      timerRunning: this.config.time > 0,
+      overtime: false,
+      scoreRed: 0,
+      scoreBlue: 0,
+      goalLimit: this.config.goalLimit || 0,
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
       players,
@@ -149,7 +190,12 @@ export class GameEngine {
     this.emitHUD();
   }
 
-  initMultiGame(players: MultiPlayerInfo[], settings: LobbySettings, myPeerId: string, isHost: boolean): void {
+  initMultiGame(
+    players: MultiPlayerInfo[],
+    settings: LobbySettings,
+    myPeerId: string,
+    isHost: boolean,
+  ): void {
     this.isMulti = true;
     this.myPeerId = myPeerId;
     this.isHost = isHost;
@@ -160,25 +206,45 @@ export class GameEngine {
     const W = this.canvas.width;
     const H = this.canvas.height;
     const scale = Math.min((W - 20) / pc.fw, (H - 20) / pc.fh, MAX_SCALE);
-    const fw = pc.fw * scale, fh = pc.fh * scale;
-    const ox = (W - fw) / 2, oy = (H - fh) / 2;
+    const fw = pc.fw * scale,
+      fh = pc.fh * scale;
+    const ox = (W - fw) / 2,
+      oy = (H - fh) / 2;
     const pr = PLAYER_RADIUS * scale;
     const br = BALL_RADIUS * scale;
 
-    const gsPlayers: PlayerState[] = this.createMultiGamePlayers(players, ox, oy, fw, fh, pr, myPeerId);
+    const gsPlayers: PlayerState[] = this.createMultiGamePlayers(
+      players,
+      ox,
+      oy,
+      fw,
+      fh,
+      pr,
+      myPeerId,
+    );
 
     this.gameState = {
-      pc, scale, fw, fh, ox, oy,
-      pr, br,
+      pc,
+      scale,
+      fw,
+      fh,
+      ox,
+      oy,
+      pr,
+      br,
       gw: pc.goalW * scale,
       gd: pc.goalDepth * scale,
       wt: pc.wallT * scale,
-      paused: false, over: false, goalCooldown: 0,
-      timeLeft: settings.time, timerRunning: settings.time > 0,
-      overtime: false,
-      scoreRed: 0, scoreBlue: 0,
-      goalLimit: settings.goals || 0,
+      paused: false,
+      over: false,
+      goalCooldown: 0,
       concededTeam: null,
+      timeLeft: settings.time,
+      timerRunning: settings.time > 0,
+      overtime: false,
+      scoreRed: 0,
+      scoreBlue: 0,
+      goalLimit: settings.goals || 0,
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
       players: gsPlayers,
@@ -202,15 +268,16 @@ export class GameEngine {
     const oldPlayers = [...gs.players];
     const newPlayers: PlayerState[] = [];
 
-    const redPlayers = players.filter(p => p.team === 'red');
-    const bluePlayers = players.filter(p => p.team === 'blue');
+    const redPlayers = players.filter((p) => p.team === 'red');
+    const bluePlayers = players.filter((p) => p.team === 'blue');
 
     const processList = (list: MultiPlayerInfo[], team: 'red' | 'blue') => {
       list.forEach((p, i) => {
         const spacing = gs.fh / (list.length + 1);
-        const existing = oldPlayers.find(op => op.peerId === p.id);
-        
-        const targetX = team === 'red' ? gs.ox + gs.pr * 2.5 : gs.ox + gs.fw - gs.pr * 2.5;
+        const existing = oldPlayers.find((op) => op.peerId === p.id);
+
+        const targetX =
+          team === 'red' ? gs.ox + gs.pr * 2.5 : gs.ox + gs.fw - gs.pr * 2.5;
         const targetY = gs.oy + spacing * (i + 1);
 
         if (existing) {
@@ -240,14 +307,28 @@ export class GameEngine {
     this.emitHUD();
   }
 
-  private createMultiGamePlayers(players: MultiPlayerInfo[], ox: number, oy: number, fw: number, fh: number, pr: number, myPeerId: string): PlayerState[] {
-    const redPlayers = players.filter(p => p.team === 'red');
-    const bluePlayers = players.filter(p => p.team === 'blue');
+  private createMultiGamePlayers(
+    players: MultiPlayerInfo[],
+    ox: number,
+    oy: number,
+    fw: number,
+    fh: number,
+    pr: number,
+    myPeerId: string,
+  ): PlayerState[] {
+    const redPlayers = players.filter((p) => p.team === 'red');
+    const bluePlayers = players.filter((p) => p.team === 'blue');
 
     return [
       ...redPlayers.map((p, i) => {
         const spacing = fh / (redPlayers.length + 1);
-        const pl = createPlayer(ox + pr * 2.5, oy + spacing * (i + 1), pr, 'red', true);
+        const pl = createPlayer(
+          ox + pr * 2.5,
+          oy + spacing * (i + 1),
+          pr,
+          'red',
+          true,
+        );
         pl.peerId = p.id;
         pl.nick = p.nick;
         pl.isMe = p.id === myPeerId;
@@ -255,7 +336,13 @@ export class GameEngine {
       }),
       ...bluePlayers.map((p, i) => {
         const spacing = fh / (bluePlayers.length + 1);
-        const pl = createPlayer(ox + fw - pr * 2.5, oy + spacing * (i + 1), pr, 'blue', true);
+        const pl = createPlayer(
+          ox + fw - pr * 2.5,
+          oy + spacing * (i + 1),
+          pr,
+          'blue',
+          true,
+        );
         pl.peerId = p.id;
         pl.nick = p.nick;
         pl.isMe = p.id === myPeerId;
@@ -297,7 +384,10 @@ export class GameEngine {
     this.gameState = null;
   }
 
-  setRemoteInput(peerId: string, input: { dx: number, dy: number, kickHeld: boolean }): void {
+  setRemoteInput(
+    peerId: string,
+    input: { dx: number; dy: number; kickHeld: boolean },
+  ): void {
     this.remoteInputs[peerId] = input;
   }
 
@@ -316,21 +406,51 @@ export class GameEngine {
     gs.ball.vy = denormVy(msg.ball.nvy);
 
     msg.players.forEach((rp: NormalizedPlayer) => {
-      const local = gs.players.find((p: PlayerState) => p.peerId === rp.peerId);
-      if (!local) return;
+      let local = gs.players.find((p: PlayerState) => p.peerId === rp.peerId);
+
+      if (!local) {
+        console.log('[GameEngine] Adding missing player from sync:', rp.peerId);
+        local = createPlayer(
+          denormX(rp.nx),
+          denormY(rp.ny),
+          gs.pr,
+          rp.team,
+          false,
+        );
+        local.peerId = rp.peerId;
+        local.isMe = rp.peerId === (this.myPeerId || '');
+        gs.players.push(local);
+      }
+
       local.x = denormX(rp.nx);
       local.y = denormY(rp.ny);
       local.vx = denormVx(rp.nvx);
       local.vy = denormVy(rp.nvy);
       local.kickFlash = rp.kickFlash;
+
+      if (local.team !== rp.team) {
+        local.team = rp.team;
+        if (local.isMe && local.peerId) {
+          useLobbyStore
+            .getState()
+            .addToLobby(local.peerId, local.nick || 'Oyuncu', local.team);
+        }
+      }
     });
+
+    if (msg.players.length < gs.players.length) {
+      const hostPids = msg.players.map((p) => p.peerId);
+      gs.players = gs.players.filter(
+        (p) => p.peerId && hostPids.includes(p.peerId),
+      );
+    }
 
     gs.scoreRed = msg.scoreRed;
     gs.scoreBlue = msg.scoreBlue;
     gs.timeLeft = msg.timeLeft;
     gs.overtime = msg.overtime || false;
-    gs.goalCooldown = msg.goalCooldown; // Sync cooldown
-    gs.kickoff = msg.kickoff; // Sync kickoff state
+    gs.goalCooldown = msg.goalCooldown;
+    gs.kickoff = msg.kickoff;
     this.emitHUD();
   }
 
@@ -345,18 +465,26 @@ export class GameEngine {
 
     return {
       ball: {
-        nx: normX(gs.ball.x), ny: normY(gs.ball.y),
-        nvx: normVx(gs.ball.vx), nvy: normVy(gs.ball.vy),
+        nx: normX(gs.ball.x),
+        ny: normY(gs.ball.y),
+        nvx: normVx(gs.ball.vx),
+        nvy: normVy(gs.ball.vy),
       },
       players: gs.players.map((p: PlayerState) => ({
-        nx: normX(p.x), ny: normY(p.y),
-        nvx: normVx(p.vx), nvy: normVy(p.vy),
-        kickFlash: p.kickFlash, peerId: p.peerId || '',
+        nx: normX(p.x),
+        ny: normY(p.y),
+        nvx: normVx(p.vx),
+        nvy: normVy(p.vy),
+        kickFlash: p.kickFlash,
+        peerId: p.peerId || '',
+        team: p.team,
       })),
-      scoreRed: gs.scoreRed, scoreBlue: gs.scoreBlue,
-      timeLeft: gs.timeLeft, overtime: gs.overtime,
-      goalCooldown: gs.goalCooldown, // Send cooldown
-      kickoff: gs.kickoff, // Send kickoff state
+      scoreRed: gs.scoreRed,
+      scoreBlue: gs.scoreBlue,
+      timeLeft: gs.timeLeft,
+      overtime: gs.overtime,
+      goalCooldown: gs.goalCooldown,
+      kickoff: gs.kickoff,
     };
   }
 
@@ -386,20 +514,15 @@ export class GameEngine {
     this.keyboardInput.hasActiveTouch = this.touchInput.isActive;
     this.keyboardInput.applyKeyboard();
 
-    // ONLY HOST (or Solo) handles game logic like Timer, Goals and Resets
     const isMaster = !gs.isMulti || this.isHost;
 
     if (isMaster) {
       if (gs.goalCooldown > 0) {
         gs.goalCooldown--;
         if (gs.goalCooldown === 0 && !gs.over) {
-          // HOST performs the reset using the stored conceding team info
-          // We NEVER guess based on ball position anymore.
           const teamToKickoff = gs.concededTeam || 'red';
           resetPositions(gs, teamToKickoff);
           gs.concededTeam = null;
-          
-          // Immediate sync after reset
           this.networkSync();
         }
       } else {
@@ -413,14 +536,15 @@ export class GameEngine {
         }
       }
     } else {
-      // Guest: Do not decrement or handle cooldown/timer locally.
-      // Simply wait for Host's applyRemoteState which includes the reset positions and new kickoff state.
+      if (gs.goalCooldown > 0) gs.goalCooldown--;
     }
 
     const localPlayer = this.getLocalPlayer();
 
     if (!localPlayer) {
-      gs.players.forEach((pl: PlayerState) => { if (pl.kickFlash > 0) pl.kickFlash--; });
+      gs.players.forEach((pl: PlayerState) => {
+        if (pl.kickFlash > 0) pl.kickFlash--;
+      });
       if (gs.isMulti && this.isHost) this.applyRemoteInputsToPlayers();
       if (!gs.isMulti && this.config.diff !== 'none' && gs.players.length > 1) {
         updateBot(gs.players[1], gs, this.config.diff);
@@ -434,7 +558,9 @@ export class GameEngine {
 
     applyPlayerMovement(localPlayer, gs.input, gs);
     if (gs.input.kickHeld) doKick(localPlayer, gs);
-    gs.players.forEach((pl: PlayerState) => { if (pl.kickFlash > 0) pl.kickFlash--; });
+    gs.players.forEach((pl: PlayerState) => {
+      if (pl.kickFlash > 0) pl.kickFlash--;
+    });
 
     if (gs.isMulti && this.isHost) this.applyRemoteInputsToPlayers();
     if (!gs.isMulti && this.config.diff !== 'none' && gs.players.length > 1) {
@@ -465,7 +591,9 @@ export class GameEngine {
   private processBallAndCollisions(): void {
     const gs = this.gameState!;
     updateBall(gs.ball, gs);
-    gs.players.forEach((p: PlayerState) => resolvePlayerBallCollision(p, gs.ball, gs));
+    gs.players.forEach((p: PlayerState) =>
+      resolvePlayerBallCollision(p, gs.ball, gs),
+    );
     for (let i = 0; i < gs.players.length; i++) {
       for (let j = i + 1; j < gs.players.length; j++) {
         resolvePlayerPlayerCollision(gs.players[i], gs.players[j]);
@@ -479,7 +607,11 @@ export class GameEngine {
     const gs = this.gameState!;
     gs.players.forEach((p: PlayerState) => {
       if (p.isMe) return;
-      const inp = this.remoteInputs[p.peerId || ''] || { dx: 0, dy: 0, kickHeld: false };
+      const inp = this.remoteInputs[p.peerId || ''] || {
+        dx: 0,
+        dy: 0,
+        kickHeld: false,
+      };
       const maxSpd = MAX_PLAYER_SPEED * gs.scale;
       const inX = Math.abs(inp.dx) > JOYSTICK_DEAD ? inp.dx : 0;
       const inY = Math.abs(inp.dy) > JOYSTICK_DEAD ? inp.dy : 0;
@@ -527,6 +659,7 @@ export class GameEngine {
     if (!result) return;
 
     const { scored, isGameEnd } = result;
+    gs.concededTeam = scored === 'red' ? 'blue' : 'red';
 
     spawnGoalParticles(gs, scored);
     this.emitHUD();
@@ -537,7 +670,7 @@ export class GameEngine {
       setTimeout(() => this.endGame(), 2400);
     } else {
       this.onGoal?.(scored);
-      gs.goalCooldown = 180; // ~3 seconds at 60fps
+      gs.goalCooldown = 180;
     }
   }
 

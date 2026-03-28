@@ -201,6 +201,8 @@ export function GameScreen() {
         ...lobbyState.red.map((p, i) => ({ id: p.id, nick: p.nick, team: 'red' as const, idx: i, total: lobbyState.red.length })),
         ...lobbyState.blue.map((p, i) => ({ id: p.id, nick: p.nick, team: 'blue' as const, idx: i, total: lobbyState.blue.length }))
       ];
+      
+      console.log('[GameScreen] Syncing players mid-game:', players.length);
       engineRef.current.updateMultiPlayers(players);
 
       const redNick = lobbyState.red.map(p => p.nick).join(' & ') || 'KIRMIZI';

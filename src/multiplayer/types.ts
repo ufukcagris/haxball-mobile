@@ -64,4 +64,5 @@ export interface NormalizedPlayer {
   nvy: number;
   kickFlash: number;
   peerId: string;
+  team: 'red' | 'blue'; // New field
 }
