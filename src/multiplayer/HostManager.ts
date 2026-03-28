@@ -52,6 +52,18 @@ export class HostManager {
         conn.on('data', (d) => {
           const msg = d as NetworkMessage;
           console.log(`[HostManager] Received message from ${pid}:`, msg.type);
+          
+          if (msg.type === 'join') {
+            console.log(`[HostManager] Player ${pid} joined with nick: ${msg.nick}`);
+            this.onPlayerJoined?.(pid, msg.nick);
+            
+            // Respond immediately with the current lobby state
+            const { useLobbyStore } = require('@/stores/useLobbyStore');
+            const currentLobby = useLobbyStore.getState().lobbyState;
+            conn.send({ type: 'lobby', state: currentLobby });
+            console.log('[HostManager] Sent initial lobby state in response to join message');
+          }
+          
           if (msg.type === 'input') {
             this.onRemoteInput?.(pid, { dx: msg.dx, dy: msg.dy, kickHeld: msg.kickHeld });
           }
