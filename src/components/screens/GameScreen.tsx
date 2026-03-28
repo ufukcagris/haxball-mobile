@@ -146,6 +146,10 @@ export function GameScreen() {
         guestManager.onGoal = (team) => {
           engine.onGoal?.(team);
         };
+        guestManager.onLobbyUpdate = (state) => {
+          console.log('[GameScreen] Guest received lobby sync mid-game');
+          setLobbyState(state);
+        };
         guestManager.onGameEnd = (scoreRed, scoreBlue) => {
           // Sync end state for guests
           useGameStore.getState().updateHUD({

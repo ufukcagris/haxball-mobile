@@ -2,6 +2,7 @@
 
 import { useLobbyStore } from '@/stores/useLobbyStore';
 import { useGameStore } from '@/stores/useGameStore';
+import { getSharedHost } from '@/components/screens/CreateRoomScreen';
 
 export function IngameLobbyOverlay() {
   const isPaused = useGameStore((s) => s.paused);
@@ -40,6 +41,10 @@ export function IngameLobbyOverlay() {
 
     addToLobby(selectedChipId, nick, team);
     setSelectedChip(null);
+
+    // Broadcast change immediately so guests see it in their PauseOverlay
+    const updatedLs = useLobbyStore.getState().lobbyState;
+    getSharedHost()?.broadcastLobby(updatedLs);
   };
 
   const renderTeam = (
