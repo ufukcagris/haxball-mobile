@@ -166,6 +166,12 @@ export function LobbyScreen({
     const nick = findNick(selectedChipId);
     addToLobby(selectedChipId, nick, team);
     setSelectedChip(null);
+
+    // Immediate broadcast for mid-game team changes
+    if (isOverlay) {
+      const updatedLs = useLobbyStore.getState().lobbyState;
+      getSharedHost()?.broadcastLobby(updatedLs);
+    }
   };
 
   const findNick = (pid: string): string => {

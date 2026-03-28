@@ -407,6 +407,8 @@ export class GameEngine {
 
     msg.players.forEach((rp: NormalizedPlayer) => {
       let local = gs.players.find((p: PlayerState) => p.peerId === rp.peerId);
+      
+      const isActuallyMe = rp.peerId === (this.myPeerId || '');
 
       if (!local) {
         console.log('[GameEngine] Adding missing player from sync:', rp.peerId);
@@ -418,7 +420,7 @@ export class GameEngine {
           false,
         );
         local.peerId = rp.peerId;
-        local.isMe = rp.peerId === (this.myPeerId || '');
+        local.isMe = isActuallyMe;
         gs.players.push(local);
       }
 
@@ -427,6 +429,7 @@ export class GameEngine {
       local.vx = denormVx(rp.nvx);
       local.vy = denormVy(rp.nvy);
       local.kickFlash = rp.kickFlash;
+      local.isMe = isActuallyMe; // Ensure self-identification is always correct
 
       if (local.team !== rp.team) {
         local.team = rp.team;
