@@ -38,6 +38,7 @@ export type NetworkMessage =
   | { type: 'game_end'; scoreRed: number; scoreBlue: number }
   | { type: 'error'; message: string }
   | { type: 'chat'; nick: string; message: string }
+  | { type: 'nick_update'; nick: string }
   | { type: 'lobby_return'; state: LobbyState };
 
 export interface MultiPlayerNetInfo {

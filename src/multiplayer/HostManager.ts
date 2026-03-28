@@ -1,7 +1,13 @@
 import { DataConnection } from 'peerjs';
 import { PeerManager } from './PeerManager';
 import { useLobbyStore } from '@/stores/useLobbyStore';
-import type { LobbyState, NetworkMessage, LobbySettings, MultiPlayerNetInfo, LobbyPlayer } from './types';
+import type {
+  LobbyState,
+  NetworkMessage,
+  LobbySettings,
+  MultiPlayerNetInfo,
+  LobbyPlayer,
+} from './types';
 
 export class HostManager {
   private peerManager: PeerManager;
@@ -77,7 +83,12 @@ export class HostManager {
 
           this.playerNicks[pid] = nick;
           this.onPlayerJoined?.(pid, nick);
-          
+
+          // Inform the guest about their final (possibly numbered) nickname
+          try {
+            conn.send({ type: 'nick_update', nick });
+          } catch {}
+
           // System message: Joined (Broadcast to others)
           this.broadcastChat('SİSTEM', `${nick} odaya katildi`);
           this.onChatMessage?.('SİSTEM', `${nick} odaya katildi`);

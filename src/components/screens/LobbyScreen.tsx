@@ -6,7 +6,7 @@ import { PlayButton } from '@/components/ui/PlayButton';
 import { SelectorButton } from '@/components/ui/SelectorButton';
 import { getSharedHost, resetSharedHost } from './CreateRoomScreen';
 import { getSharedGuest } from './JoinRoomScreen';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Toast } from '@/components/ui/Toast';
 import { tryAutoFullscreen } from '@/utils/fullscreen';
 
@@ -94,6 +94,10 @@ export function LobbyScreen({
           setLobbyState(state);
         };
         guest.onChatMessage = (nick, msg) => addChatMessage(nick, msg);
+        guest.onNickUpdate = (newNick) => {
+          console.log('[LobbyScreen] Nick updated by host:', newNick);
+          useAppStore.getState().setConfig({ nick: newNick });
+        };
       }
     } else {
       const host = getSharedHost();
@@ -225,16 +229,27 @@ export function LobbyScreen({
       <div
         className='flex flex-col items-center justify-center gap-6 w-full h-full'
         style={{
-          background: 'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
+          background:
+            'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
         }}
       >
         <div className='menu-bg' />
         <div className='text-[1.2rem] font-bold text-white z-1 text-center leading-tight'>
-          Odadan ayrilmak istedigine<br/>emin misin?
+          Odadan ayrilmak istedigine
+          <br />
+          emin misin?
         </div>
         <div className='flex flex-col gap-3 w-[240px] z-1'>
-          <PlayButton onClick={leaveLobby} variant="red" className="!py-3">EVET, AYRIL</PlayButton>
-          <PlayButton onClick={() => setShowExitConfirm(false)} variant="secondary" className="!py-3">HAYIR, KAL</PlayButton>
+          <PlayButton onClick={leaveLobby} variant='red' className='py-3!'>
+            EVET, AYRIL
+          </PlayButton>
+          <PlayButton
+            onClick={() => setShowExitConfirm(false)}
+            variant='secondary'
+            className='py-3!'
+          >
+            HAYIR, KAL
+          </PlayButton>
         </div>
       </div>
     );
@@ -426,7 +441,10 @@ export function LobbyScreen({
               </div>
             )}
             {chatMessages.map((m) => (
-              <div key={m.id} className='text-[0.75rem] leading-tight break-all'>
+              <div
+                key={m.id}
+                className='text-[0.75rem] leading-tight break-all'
+              >
                 <span
                   className='font-black mr-1.5'
                   style={{ color: getNickColor(m.nick) }}

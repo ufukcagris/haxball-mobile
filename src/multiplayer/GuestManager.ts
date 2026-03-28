@@ -26,6 +26,7 @@ export class GuestManager {
     null;
   public onLobbyReturn: ((state: LobbyState) => void) | null = null;
   public onChatMessage: ((nick: string, message: string) => void) | null = null;
+  public onNickUpdate: ((newNick: string) => void) | null = null;
   public onDisconnect: (() => void) | null = null;
   public onError: ((err: string) => void) | null = null;
 
@@ -76,6 +77,9 @@ export class GuestManager {
           break;
         case 'chat':
           this.onChatMessage?.(msg.nick, msg.message);
+          break;
+        case 'nick_update':
+          this.onNickUpdate?.(msg.nick);
           break;
         case 'error':
           this.onError?.(msg.message || 'Bilinmeyen hata');
