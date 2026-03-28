@@ -274,21 +274,35 @@ export class GameEngine {
     const bluePlayers = players.filter((p) => p.team === 'blue');
 
     const processList = (list: MultiPlayerInfo[], team: 'red' | 'blue') => {
-      list.forEach((p, i) => {
-        const spacing = gs.fh / (list.length + 1);
+      // Reverse the list so the first added player is 'pushed' furthest forward
+      // and the last added player stays at the extreme back.
+      const reversed = [...list].reverse();
+      
+      reversed.forEach((p, i) => {
         const existing = oldPlayers.find((op) => op.peerId === p.id);
-
-        const targetX =
-          team === 'red' ? gs.ox + gs.pr * 2.5 : gs.ox + gs.fw - gs.pr * 2.5;
-        const targetY = gs.oy + spacing * (i + 1);
+        
+        // targetX: Start from the very back of the net and move inward for each player
+        // Red back: ox - gd, Blue back: ox + fw + gd
+        const backX = team === 'red' ? gs.ox - gs.gd : gs.ox + gs.fw + gs.gd;
+        const direction = team === 'red' ? 1 : -1;
+        
+        // Each player is offset by their diameter + a small gap (2.2 * radius)
+        const targetX = backX + (direction * (i * gs.pr * 2.2 + gs.pr));
+        const targetY = gs.oy + gs.fh / 2;
 
         if (existing) {
+          // Update position if team changed or they are not in the 'line' yet
           if (existing.team !== team) {
             existing.team = team;
             existing.x = targetX;
             existing.y = targetY;
             existing.vx = 0;
             existing.vy = 0;
+          } else {
+            // Smoothly move to their new 'pushed' position instead of snapping?
+            // Actually, for consistency during team shuffle, snapping is better.
+            existing.x = targetX;
+            existing.y = targetY;
           }
           existing.nick = p.nick;
           newPlayers.push(existing);
