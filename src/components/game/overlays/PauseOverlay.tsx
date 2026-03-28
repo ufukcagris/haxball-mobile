@@ -9,7 +9,7 @@ interface PauseOverlayProps {
 }
 
 export function PauseOverlay({ onResume, onMenu }: PauseOverlayProps) {
-  const isPaused = useGameStore((s) => s.isPaused);
+  const isPaused = useGameStore((s) => s.paused);
 
   if (!isPaused) return null;
 

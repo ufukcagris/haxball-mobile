@@ -65,7 +65,7 @@ export function GameScreen() {
     engine.keyboardInput.attach(
       () => {
         // Toggle pause/menu overlay
-        const currentlyPaused = useGameStore.getState().isPaused;
+        const currentlyPaused = useGameStore.getState().paused;
         if (!currentlyPaused) {
           useGameStore.getState().setPaused(true);
           if (myRole === 'solo') engine.pause();
