@@ -1,7 +1,7 @@
 import { DataConnection } from 'peerjs';
 import { PeerManager } from './PeerManager';
 import { useLobbyStore } from '@/stores/useLobbyStore';
-import type { LobbyState, NetworkMessage, LobbySettings, MultiPlayerNetInfo } from './types';
+import type { LobbyState, NetworkMessage, LobbySettings, MultiPlayerNetInfo, LobbyPlayer } from './types';
 
 export class HostManager {
   private peerManager: PeerManager;
@@ -52,7 +52,26 @@ export class HostManager {
         const handleJoin = () => {
           console.log('[HostManager] Connection OPEN with:', pid);
           const metadata = conn.metadata as { nick?: string } | undefined;
-          const nick = metadata?.nick || 'Oyuncu';
+          let nick = (metadata?.nick || 'Oyuncu').trim();
+
+          // Ensure unique nick - Use top-level import and correct types
+          const currentLs = useLobbyStore.getState().lobbyState;
+          const allNicks = [
+            ...currentLs.red.map((p: LobbyPlayer) => p.nick),
+            ...currentLs.blue.map((p: LobbyPlayer) => p.nick),
+            ...currentLs.spec.map((p: LobbyPlayer) => p.nick),
+          ];
+
+          if (allNicks.includes(nick)) {
+            let counter = 1;
+            let newNick = `${nick}${counter}`;
+            while (allNicks.includes(newNick)) {
+              counter++;
+              newNick = `${nick}${counter}`;
+            }
+            nick = newNick;
+          }
+
           this.onPlayerJoined?.(pid, nick);
 
           // Send current lobby state immediately to the newcomer
