@@ -483,6 +483,12 @@ export class GameEngine {
         peerId: p.peerId || '',
         nick: p.nick || '?',
         team: p.team,
+        chatMessage: p.chatBubble?.message,
+        chatTimer: p.chatBubble
+          ? p.chatBubble.timer > 1000
+            ? 999999
+            : p.chatBubble.timer
+          : undefined,
       })),
       scoreRed: gs.scoreRed,
       scoreBlue: gs.scoreBlue,
