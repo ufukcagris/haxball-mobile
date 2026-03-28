@@ -106,6 +106,7 @@ export class GameEngine {
 
       const newScale = Math.min((W - 20) / pc.fw, (H - 20) / pc.fh, MAX_SCALE);
 
+      // Update dimensions
       gs.scale = newScale;
       gs.fw = pc.fw * newScale;
       gs.fh = pc.fh * newScale;
@@ -117,8 +118,10 @@ export class GameEngine {
       gs.gd = pc.goalDepth * newScale;
       gs.wt = pc.wallT * newScale;
 
-      const scaleRatio = newScale / oldScale;
+      // Safety: If oldScale was 0 or invalid, don't try to interpolate positions
+      if (!oldScale || oldScale <= 0) return;
 
+      const scaleRatio = newScale / oldScale;
       gs.ball.x = gs.ox + (gs.ball.x - oldOx) * scaleRatio;
       gs.ball.y = gs.oy + (gs.ball.y - oldOy) * scaleRatio;
       gs.ball.r = gs.br;

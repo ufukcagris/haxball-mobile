@@ -5,6 +5,11 @@ export function renderPlayers(ctx: CanvasRenderingContext2D, gs: GameState): voi
   const ball = gs.ball;
 
   gs.players.forEach(p => {
+    // Safety check: Ensure values are finite
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.r) || p.r <= 0) {
+      return;
+    }
+
     // Shadow
     ctx.beginPath();
     ctx.ellipse(p.x, p.y + p.r * 0.85, p.r * 0.9, p.r * 0.3, 0, 0, Math.PI * 2);

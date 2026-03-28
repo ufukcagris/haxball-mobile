@@ -8,6 +8,12 @@ export class KeyboardInput {
   private getLocalPlayer: (() => import('../types').PlayerState | null) | null = null;
 
   private handleKeyDown = (e: KeyboardEvent): void => {
+    // Ignore if typing in a text field
+    const target = e.target as HTMLElement;
+    if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') {
+      return;
+    }
+
     this.keys[e.key] = true;
     if ((e.key === 'p' || e.key === 'Escape') && this.gs && !this.gs.over) {
       this.onPause?.();
@@ -22,6 +28,12 @@ export class KeyboardInput {
   };
 
   private handleKeyUp = (e: KeyboardEvent): void => {
+    // Ignore if typing in a text field
+    const target = e.target as HTMLElement;
+    if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') {
+      return;
+    }
+
     this.keys[e.key] = false;
     if ((e.key === ' ' || e.key === 'x') && this.gs) {
       this.gs.input.kickHeld = false;

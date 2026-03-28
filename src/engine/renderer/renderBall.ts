@@ -3,6 +3,11 @@ import { GameState } from '../types';
 export function renderBall(ctx: CanvasRenderingContext2D, gs: GameState): void {
   const ball = gs.ball;
 
+  // Safety check: Ensure values are finite to avoid canvas errors
+  if (!Number.isFinite(ball.x) || !Number.isFinite(ball.y) || !Number.isFinite(ball.r) || ball.r <= 0) {
+    return;
+  }
+
   // Shadow
   ctx.beginPath();
   ctx.ellipse(ball.x, ball.y + ball.r * 0.8, ball.r * 0.9, ball.r * 0.3, 0, 0, Math.PI * 2);
