@@ -24,7 +24,20 @@ export function GameScreen() {
 
   const { config, screen, setScreen } = useAppStore();
   const gameStore = useGameStore();
-  const { myRole, lobbyState, myPeerId } = useLobbyStore();
+  const { myRole, lobbyState, myPeerId, setLobbyState } = useLobbyStore();
+
+  const goLobby = useCallback(() => {
+    if (myRole === 'host') {
+      const hostManager = getSharedHost();
+      if (hostManager) {
+        hostManager.broadcastLobbyReturn(lobbyState);
+      }
+    }
+    engineRef.current?.destroy();
+    engineRef.current = null;
+    useGameStore.getState().reset();
+    setScreen('lobby');
+  }, [myRole, lobbyState, setScreen]);
 
   const initEngine = useCallback(() => {
     const canvas = canvasRef.current;
@@ -134,6 +147,12 @@ export function GameScreen() {
         guestManager.onGameEnd = () => {
           engine.onEnd?.();
         };
+        guestManager.onLobbyReturn = (state) => {
+          console.log('[GameScreen] Guest received lobby_return!');
+          setLobbyState(state);
+          engine.destroy();
+          setScreen('lobby');
+        };
       }
     }
 
@@ -153,7 +172,7 @@ export function GameScreen() {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [config, myRole, lobbyState, myPeerId]);
+  }, [config, myRole, lobbyState, myPeerId, setLobbyState, setScreen]);
 
   useEffect(() => {
     if (screen !== 'game') return;
@@ -216,7 +235,7 @@ export function GameScreen() {
         <span className="absolute bottom-7 left-1/2 -translate-x-1/2 text-[1.2rem] opacity-[0.18]">⚡</span>
       </div>
 
-      <PauseOverlay onResume={resumeGame} onMenu={goMenu} />
+      <PauseOverlay onResume={resumeGame} onMenu={goMenu} onLobby={goLobby} />
       <GoalOverlay />
       <EndOverlay onRestart={restartGame} onMenu={goMenu} />
     </div>

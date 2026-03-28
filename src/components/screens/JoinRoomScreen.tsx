@@ -66,23 +66,22 @@ export function JoinRoomScreen() {
     setStatusCls('');
     setMyRole('guest');
 
-    const peer = getSharedPeer();
-    sharedGuest = new GuestManager(peer);
+    const guest = getSharedGuest()!;
 
-    sharedGuest.onLobbyUpdate = (state) => {
+    guest.onLobbyUpdate = (state) => {
       setLobbyState(state);
       setScreen('lobby');
     };
-    sharedGuest.onDisconnect = () => {
+    guest.onDisconnect = () => {
       alert('Baglanti kesildi');
       setScreen('menu');
     };
-    sharedGuest.onError = (err) => {
+    guest.onError = (err) => {
       setStatus('❌ ' + err);
       setStatusCls('err');
     };
 
-    sharedGuest.connect(code.trim(), config.nick);
+    guest.connect(code.trim(), config.nick);
   };
 
   return (
