@@ -114,6 +114,14 @@ export function LobbyScreen({
     }
   }, [ls, isHost]);
 
+  // Late join sync: If match is live, go to game screen
+  useEffect(() => {
+    if (ls.isLive && !isOverlay) {
+      console.log('[LobbyScreen] Joining a live match, switching to game...');
+      setScreen('game');
+    }
+  }, [ls.isLive, isOverlay, setScreen]);
+
   const sendChat = () => {
     const msg = chatInput.trim();
     if (!msg) return;

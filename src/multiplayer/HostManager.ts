@@ -1,19 +1,14 @@
 import { DataConnection } from 'peerjs';
 import { PeerManager } from './PeerManager';
 import { useLobbyStore } from '@/stores/useLobbyStore';
-import type {
-  LobbyState,
-  NetworkMessage,
-  LobbySettings,
-  MultiPlayerNetInfo,
-  LobbyPlayer,
-} from './types';
+import type { LobbyState, NetworkMessage, LobbySettings, MultiPlayerNetInfo, LobbyPlayer } from './types';
 
 export class HostManager {
   private peerManager: PeerManager;
   private connections: Record<string, DataConnection> = {};
   private playerNicks: Record<string, string> = {}; // Track nicks for leave messages
   private netSendCounter = 0;
+  private isMatchLive = false;
 
   public onPlayerJoined: ((pid: string, nick: string) => void) | null = null;
   public onPlayerLeft: ((pid: string) => void) | null = null;
@@ -83,12 +78,14 @@ export class HostManager {
 
           this.playerNicks[pid] = nick;
           this.onPlayerJoined?.(pid, nick);
-
+          
           // Inform the guest about their final (possibly numbered) nickname
           try {
             conn.send({ type: 'nick_update', nick });
-          } catch {}
-
+          } catch {
+            /* ignore */
+          }
+          
           // System message: Joined (Broadcast to others)
           this.broadcastChat('SİSTEM', `${nick} odaya katildi`);
           this.onChatMessage?.('SİSTEM', `${nick} odaya katildi`);
@@ -98,7 +95,7 @@ export class HostManager {
           setTimeout(() => {
             const currentLobby = useLobbyStore.getState().lobbyState;
             try {
-              conn.send({ type: 'lobby', state: currentLobby });
+              conn.send({ type: 'lobby', state: { ...currentLobby, isLive: this.isMatchLive } });
               console.log(
                 '[HostManager] Lobby state sent successfully to:',
                 pid,
@@ -164,7 +161,10 @@ export class HostManager {
   }
 
   broadcastLobby(lobbyState: LobbyState): void {
-    const msg: NetworkMessage = { type: 'lobby', state: lobbyState };
+    const msg: NetworkMessage = { 
+      type: 'lobby', 
+      state: { ...lobbyState, isLive: this.isMatchLive } 
+    };
     this.sendToAll(msg);
   }
 
@@ -172,6 +172,7 @@ export class HostManager {
     players: MultiPlayerNetInfo[],
     settings: LobbySettings,
   ): void {
+    this.isMatchLive = true;
     const msg: NetworkMessage = { type: 'game_start', players, settings };
     this.sendToAll(msg);
   }
@@ -187,10 +188,12 @@ export class HostManager {
   }
 
   broadcastEndGame(scoreRed: number, scoreBlue: number): void {
+    this.isMatchLive = false;
     this.sendToAll({ type: 'game_end', scoreRed, scoreBlue });
   }
 
   broadcastLobbyReturn(lobbyState: LobbyState): void {
+    this.isMatchLive = false;
     this.sendToAll({ type: 'lobby_return', state: lobbyState });
   }
 
@@ -218,5 +221,6 @@ export class HostManager {
     });
     this.connections = {};
     this.playerNicks = {};
+    this.isMatchLive = false;
   }
 }

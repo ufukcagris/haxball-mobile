@@ -17,6 +17,7 @@ export interface LobbyState {
   spec: LobbyPlayer[];
   settings: LobbySettings;
   hostId: string | null;
+  isLive?: boolean; // New property
 }
 
 export type MyRole = 'solo' | 'host' | 'guest';
