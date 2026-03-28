@@ -238,6 +238,7 @@ export class GameEngine {
       goalLimit: settings.goals || 0,
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
+      // Create players in exact lobby order to match sync checks
       players: players.map((p) => {
         const pl = createPlayer(0, 0, pr, p.team, true);
         pl.peerId = p.id;
@@ -267,30 +268,54 @@ export class GameEngine {
     const oldPlayers = [...gs.players];
     const newPlayers: PlayerState[] = [];
 
-    const redPlayers = players.filter((p) => p.team === 'red');
-    const bluePlayers = players.filter((p) => p.team === 'blue');
+    const redPlayersLobby = players.filter((p) => p.team === 'red');
+    const bluePlayersLobby = players.filter((p) => p.team === 'blue');
 
-    const processList = (list: MultiPlayerInfo[], team: 'red' | 'blue') => {
+    // HELPER: Check if team composition (members or order) changed
+    const hasTeamChanged = (
+      team: 'red' | 'blue',
+      targetList: MultiPlayerInfo[],
+    ) => {
+      const currentIds = gs.players
+        .filter((p) => p.team === team)
+        .map((p) => p.peerId)
+        .join(',');
+      const targetIds = targetList.map((p) => p.id).join(',');
+      return currentIds !== targetIds;
+    };
+
+    const redChanged = hasTeamChanged('red', redPlayersLobby);
+    const blueChanged = hasTeamChanged('blue', bluePlayersLobby);
+
+    const processList = (
+      list: MultiPlayerInfo[],
+      team: 'red' | 'blue',
+      changed: boolean,
+    ) => {
       const reversed = [...list].reverse();
       reversed.forEach((p, i) => {
         const existing = oldPlayers.find((op) => op.peerId === p.id);
         const backX = team === 'red' ? gs.ox - gs.gd : gs.ox + gs.fw + gs.gd;
         const direction = team === 'red' ? 1 : -1;
+
+        // Horizontal: Sequential pushing. Vertical: Always centered.
         const targetX = backX + direction * (i * gs.pr * 2.2 + gs.pr);
         const targetY = gs.oy + gs.fh / 2;
 
         if (existing) {
-          if (existing.team !== team) {
+          // If the team members/order changed, RE-LAYOUT everyone on this team
+          // If team is same and composition is same, DON'T touch positions (kickoff preservation)
+          if (existing.team !== team || changed) {
             existing.team = team;
             existing.x = targetX;
             existing.y = targetY;
             existing.vx = 0;
             existing.vy = 0;
           }
-          // If team is same, don't override x/y to preserve kickoff/active positions
           existing.nick = p.nick;
           newPlayers.push(existing);
         } else {
+          // New player: layout in line
           const pl = createPlayer(targetX, targetY, gs.pr, team, true);
           pl.peerId = p.id;
           pl.nick = p.nick;
@@ -300,8 +325,9 @@ export class GameEngine {
       });
     };
 
-    processList(redPlayers, 'red');
-    processList(bluePlayers, 'blue');
+    processList(redPlayersLobby, 'red', redChanged);
+    processList(bluePlayersLobby, 'blue', blueChanged);
+
     gs.players = newPlayers;
     this.emitHUD();
   }
