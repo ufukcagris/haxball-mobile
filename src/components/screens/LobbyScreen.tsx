@@ -33,13 +33,14 @@ export function LobbyScreen({
     addToLobby,
     chatMessages,
     addChatMessage,
+    hasJoinedMessageShown,
+    setHasJoinedMessageShown,
   } = useLobbyStore();
 
   const [toast, setToast] = useState({ message: '', visible: false });
   const [chatInput, setChatInput] = useState('');
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
-  const hasJoinedRef = useRef(false);
 
   const colors = [
     '#00e5ff',
@@ -75,11 +76,11 @@ export function LobbyScreen({
 
   // Local welcome message
   useEffect(() => {
-    if (!hasJoinedRef.current) {
+    if (!hasJoinedMessageShown) {
       addChatMessage('SİSTEM', 'Odaya katildin');
-      hasJoinedRef.current = true;
+      setHasJoinedMessageShown(true);
     }
-  }, [addChatMessage]);
+  }, [addChatMessage, hasJoinedMessageShown, setHasJoinedMessageShown]);
 
   // Sync guest with game start and lobby updates
   useEffect(() => {

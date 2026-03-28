@@ -7,11 +7,13 @@ interface LobbyStoreState {
   myPeerId: string | null;
   selectedChipId: string | null;
   chatMessages: Array<{ nick: string; message: string; id: number }>;
+  hasJoinedMessageShown: boolean;
 
   setLobbyState: (state: LobbyState) => void;
   setMyRole: (role: MyRole) => void;
   setMyPeerId: (id: string | null) => void;
   setSelectedChip: (id: string | null) => void;
+  setHasJoinedMessageShown: (shown: boolean) => void;
   addToLobby: (
     pid: string,
     nick: string,
@@ -38,11 +40,13 @@ export const useLobbyStore = create<LobbyStoreState>((set) => ({
   myPeerId: null,
   selectedChipId: null,
   chatMessages: [],
+  hasJoinedMessageShown: false,
 
   setLobbyState: (state) => set({ lobbyState: state }),
   setMyRole: (role) => set({ myRole: role }),
   setMyPeerId: (id) => set({ myPeerId: id }),
   setSelectedChip: (id) => set({ selectedChipId: id }),
+  setHasJoinedMessageShown: (shown) => set({ hasJoinedMessageShown: shown }),
 
   addToLobby: (pid, nick, team) =>
     set((s) => {
@@ -80,5 +84,6 @@ export const useLobbyStore = create<LobbyStoreState>((set) => ({
       myPeerId: null,
       selectedChipId: null,
       chatMessages: [],
+      hasJoinedMessageShown: false,
     }),
 }));
