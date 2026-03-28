@@ -118,11 +118,18 @@ export function LobbyScreen({
     const msg = chatInput.trim();
     if (!msg) return;
 
+    // Use current nick from lobby instead of config.nick to ensure numbered nicks work
+    let currentNick = config.nick;
+    if (myPeerId) {
+      const found = [...ls.red, ...ls.blue, ...ls.spec].find(p => p.id === myPeerId);
+      if (found) currentNick = found.nick;
+    }
+
     if (isHost) {
-      getSharedHost()?.broadcastChat(config.nick, msg);
-      addChatMessage(config.nick, msg);
+      getSharedHost()?.broadcastChat(currentNick, msg);
+      addChatMessage(currentNick, msg);
     } else {
-      getSharedGuest()?.sendChat(config.nick, msg);
+      getSharedGuest()?.sendChat(currentNick, msg);
     }
     setChatInput('');
   };
