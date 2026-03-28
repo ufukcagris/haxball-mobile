@@ -60,7 +60,7 @@ export function JoinRoomScreen() {
 
   return (
     <div
-      className="flex flex-col items-center justify-start overflow-y-auto p-4 gap-3 w-full h-full"
+      className="flex flex-col items-center justify-center overflow-y-auto px-3 py-6 gap-3 w-full h-full"
       style={{
         background: 'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
         WebkitOverflowScrolling: 'touch',
@@ -88,10 +88,10 @@ export function JoinRoomScreen() {
           {status}
         </div>
 
-        <PlayButton onClick={joinRoom}>
+        <PlayButton onClick={joinRoom} className="w-full">
           🚀 KATIL
         </PlayButton>
-        <PlayButton onClick={() => setScreen('menu')} variant="secondary">
+        <PlayButton onClick={() => setScreen('menu')} variant="secondary" className="w-full">
           ← Geri
         </PlayButton>
       </MenuCard>

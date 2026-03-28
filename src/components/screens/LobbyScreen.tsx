@@ -98,10 +98,11 @@ export function LobbyScreen() {
   const leaveLobby = () => {
     if (isHost) {
       getSharedHost()?.closeAll();
+      const { resetSharedHost } = require('./CreateRoomScreen');
+      resetSharedHost();
     } else {
       getSharedGuest()?.disconnect();
     }
-    getSharedPeer().destroy();
     resetLobby();
     setScreen('menu');
   };
@@ -111,7 +112,7 @@ export function LobbyScreen() {
   const renderTeam = (team: 'red' | 'blue' | 'spec', label: string, borderColor: string) => (
     <div
       onClick={() => dropSelected(team)}
-      className={`bg-[rgba(17,24,39,0.75)] rounded-[14px] p-2 flex flex-col gap-[5px] min-h-[140px]
+      className={`bg-[rgba(17,24,39,0.75)] rounded-[14px] py-2 px-[6px] flex flex-col gap-[5px] min-h-[140px]
         border-[1.5px] cursor-pointer transition-all duration-200`}
       style={{ borderColor }}
     >
@@ -145,7 +146,7 @@ export function LobbyScreen() {
 
   return (
     <div
-      className="flex flex-col items-center justify-start overflow-y-auto p-2 gap-2 w-full h-full"
+      className="flex flex-col items-center justify-center overflow-y-auto py-4 px-[6px] gap-3 w-full h-full"
       style={{
         background: 'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
         WebkitOverflowScrolling: 'touch',
@@ -196,7 +197,7 @@ export function LobbyScreen() {
           <div className="text-[0.58rem] font-bold tracking-[2px] uppercase text-[var(--text-dim)]">Saha</div>
           <div className="flex gap-1 flex-wrap">
             {(['small', 'medium', 'large'] as const).map(v => (
-              <SelectorButton key={v} active={ls.settings.pitch === v} onClick={() => setSetting('pitch', v)} className="text-[0.7rem] py-[5px]">
+              <SelectorButton key={v} active={ls.settings.pitch === v} onClick={() => setSetting('pitch', v)} className="text-[0.7rem] py-[5px] !border-[1.5px] !rounded-[7px] min-w-[32px]">
                 {v === 'small' ? 'Kucuk' : v === 'medium' ? 'Orta' : 'Buyuk'}
               </SelectorButton>
             ))}
@@ -206,7 +207,7 @@ export function LobbyScreen() {
           <div className="text-[0.58rem] font-bold tracking-[2px] uppercase text-[var(--text-dim)]">Sure</div>
           <div className="flex gap-1 flex-wrap">
             {[{ v: 120, l: '2dk' }, { v: 180, l: '3dk' }, { v: 300, l: '5dk' }, { v: 0, l: '∞' }].map(t => (
-              <SelectorButton key={t.v} active={ls.settings.time === t.v} onClick={() => setSetting('time', t.v)} className="text-[0.7rem] py-[5px]">
+              <SelectorButton key={t.v} active={ls.settings.time === t.v} onClick={() => setSetting('time', t.v)} className="text-[0.7rem] py-[5px] !border-[1.5px] !rounded-[7px] min-w-[32px]">
                 {t.l}
               </SelectorButton>
             ))}
@@ -216,7 +217,7 @@ export function LobbyScreen() {
           <div className="text-[0.58rem] font-bold tracking-[2px] uppercase text-[var(--text-dim)]">Gol Limiti</div>
           <div className="flex gap-1 flex-wrap">
             {[1, 3, 5, 0].map(g => (
-              <SelectorButton key={g} active={ls.settings.goals === g} onClick={() => setSetting('goals', g)} className="text-[0.7rem] py-[5px]">
+              <SelectorButton key={g} active={ls.settings.goals === g} onClick={() => setSetting('goals', g)} className="text-[0.7rem] py-[5px] !border-[1.5px] !rounded-[7px] min-w-[32px]">
                 {g === 0 ? '∞' : g}
               </SelectorButton>
             ))}
@@ -226,11 +227,11 @@ export function LobbyScreen() {
 
       {/* Actions */}
       <div className="w-[min(98vw,900px)] flex gap-2 shrink-0 z-[1]">
-        <PlayButton onClick={leaveLobby} variant="secondary" className="flex-none w-20">← Cik</PlayButton>
+        <PlayButton onClick={leaveLobby} variant="secondary" className="flex-none w-[80px] !py-[12px] !text-[0.9rem] !rounded-[11px]">← Cik</PlayButton>
         {isHost && (
-          <PlayButton onClick={randomize} variant="purple" className="flex-1">🎲 Rastgele</PlayButton>
+          <PlayButton onClick={randomize} variant="purple" className="flex-1 !py-[12px] !text-[0.9rem] !rounded-[11px]">🎲 Rastgele</PlayButton>
         )}
-        <PlayButton onClick={startMatch} disabled={!canStart || !isHost} className="flex-[2]">
+        <PlayButton onClick={startMatch} disabled={!canStart || !isHost} className="flex-[2] !py-[12px] !text-[0.9rem] !rounded-[11px]">
           {isHost ? '⚽ MACA BASLA' : 'Host baslatacak...'}
         </PlayButton>
       </div>

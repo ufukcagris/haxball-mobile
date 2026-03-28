@@ -15,14 +15,14 @@ const variants = {
   secondary: 'bg-[var(--surface2)] text-[var(--text-dim)] border-[1.5px] border-[var(--border)]',
 };
 
-export function PlayButton({ onClick, children, variant = 'primary', disabled, className = '' }: PlayButtonProps) {
+export function PlayButton({ onClick, children, variant = 'primary', disabled, className = 'w-full' }: PlayButtonProps) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={`border-none rounded-[12px] cursor-pointer font-['Exo_2',sans-serif]
         text-[0.95rem] font-black tracking-[2px] py-[clamp(10px,1.5vh,14px)] uppercase
-        transition-all duration-150 w-full active:scale-[0.97] active:opacity-90
+        transition-all duration-150 active:scale-[0.97] active:opacity-90
         disabled:opacity-50 disabled:cursor-not-allowed
         ${variants[variant]} ${className}`}
       style={{ touchAction: 'manipulation' }}

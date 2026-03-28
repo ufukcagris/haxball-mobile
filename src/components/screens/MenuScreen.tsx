@@ -151,10 +151,10 @@ export function MenuScreen() {
           </div>
         </div>
 
-        <PlayButton onClick={startSoloGame} className="mb-1.5">
+        <PlayButton onClick={startSoloGame} className="w-full mb-1.5">
           ⚽ BOTA KARSI OYNA
         </PlayButton>
-        <PlayButton onClick={startMultiplayer} variant="red">
+        <PlayButton onClick={startMultiplayer} variant="red" className="w-full">
           👥 ARKADASLA OYNA
         </PlayButton>
       </MenuCard>

@@ -31,10 +31,10 @@ export function SelectorButton({ active, onClick, children, color = 'accent', cl
   return (
     <button
       onClick={onClick}
-      className={`flex-1 bg-[var(--surface2)] border-2 border-[var(--border)] rounded-[9px]
+      className={`flex-1 bg-[var(--surface2)] border-2 rounded-[9px]
         text-[var(--text-dim)] cursor-pointer font-['Exo_2',sans-serif] text-[0.8rem] font-bold
         py-[clamp(5px,1vh,8px)] px-0.5 text-center transition-all duration-200
-        ${active ? `${c.border} ${c.bg} ${c.text}` : ''}
+        ${active ? `${c.border} ${c.bg} ${c.text}` : 'border-[var(--border)]'}
         ${className}`}
       style={{ touchAction: 'manipulation' }}
     >

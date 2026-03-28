@@ -19,6 +19,7 @@ export function getSharedPeer(): PeerManager {
   return sharedPeer;
 }
 export function getSharedHost(): HostManager | null { return sharedHost; }
+export function resetSharedHost(): void { sharedHost = null; }
 
 export function CreateRoomScreen() {
   const { config, setScreen } = useAppStore();
@@ -31,24 +32,37 @@ export function CreateRoomScreen() {
 
   useEffect(() => {
     const peer = getSharedPeer();
-    peer.init(
-      (id) => {
-        setStatus('✅ Hazir');
-        setStatusCls('ok');
-        setReady(true);
-        setMyPeerId(id);
-      },
-      (err) => {
-        setStatus('❌ Baglanti hatasi: ' + err);
-        setStatusCls('err');
-      },
-      undefined
-    );
+    
+    const onInit = (id: string) => {
+      setStatus('✅ Hazir');
+      setStatusCls('ok');
+      setReady(true);
+      setMyPeerId(id);
+    };
+
+    if (peer.isReady && peer.peerId) {
+      onInit(peer.peerId);
+    } else {
+      setReady(false);
+      peer.init(
+        onInit,
+        (err) => {
+          setStatus('❌ Baglanti hatasi: ' + err);
+          setStatusCls('err');
+          setReady(false);
+        },
+        undefined
+      );
+    }
   }, [setMyPeerId]);
 
   const createRoom = () => {
     const peer = getSharedPeer();
-    if (!peer.peerId) return;
+    if (!peer.peerId || !ready) {
+      setStatus('❌ Peer hazir degil!');
+      setStatusCls('err');
+      return;
+    }
 
     setMyRole('host');
     const newLobby = {
@@ -79,7 +93,7 @@ export function CreateRoomScreen() {
 
   return (
     <div
-      className="flex flex-col items-center justify-start overflow-y-auto p-4 gap-3 w-full h-full"
+      className="flex flex-col items-center justify-center overflow-y-auto px-3 py-6 gap-3 w-full h-full"
       style={{
         background: 'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
         WebkitOverflowScrolling: 'touch',
@@ -120,13 +134,13 @@ export function CreateRoomScreen() {
           {status}
         </div>
 
-        <PlayButton onClick={createRoom} disabled={!ready}>
+        <PlayButton onClick={createRoom} disabled={!ready} className="w-full">
           🏟️ ODA OLUSTUR
         </PlayButton>
-        <PlayButton onClick={() => setScreen('join')} variant="purple">
+        <PlayButton onClick={() => setScreen('join')} variant="purple" className="w-full">
           🚀 ODAYA KATIL
         </PlayButton>
-        <PlayButton onClick={() => setScreen('menu')} variant="secondary">
+        <PlayButton onClick={() => setScreen('menu')} variant="secondary" className="w-full">
           ← Geri
         </PlayButton>
       </MenuCard>
