@@ -51,6 +51,8 @@ export class HostManager {
         this.connections[pid] = conn;
 
         const handleJoin = () => {
+          if (this.playerNicks[pid]) return; // Already joined
+
           console.log('[HostManager] Connection OPEN with:', pid);
           const metadata = conn.metadata as { nick?: string } | undefined;
           let nick = (metadata?.nick || 'Oyuncu').trim();
@@ -76,7 +78,7 @@ export class HostManager {
           this.playerNicks[pid] = nick;
           this.onPlayerJoined?.(pid, nick);
           
-          // System message: Joined
+          // System message: Joined (Broadcast to others)
           this.broadcastChat('SİSTEM', `${nick} odaya katildi`);
           this.onChatMessage?.('SİSTEM', `${nick} odaya katildi`);
 
@@ -111,8 +113,7 @@ export class HostManager {
           console.log(`[HostManager] Received message from ${pid}:`, msg.type);
 
           if (msg.type === 'join') {
-            // Already handled by connection listener metadata in most cases, 
-            // but kept for fallback or re-joins if necessary.
+            handleJoin();
           }
 
           if (msg.type === 'chat') {
@@ -133,12 +134,15 @@ export class HostManager {
         const handleLeave = () => {
           const nick = this.playerNicks[pid];
           if (nick) {
+            console.log('[HostManager] Player left:', nick);
             this.broadcastChat('SİSTEM', `${nick} odadan ayrildi`);
             this.onChatMessage?.('SİSTEM', `${nick} odadan ayrildi`);
             delete this.playerNicks[pid];
           }
-          delete this.connections[pid];
-          this.onPlayerLeft?.(pid);
+          if (this.connections[pid]) {
+            delete this.connections[pid];
+            this.onPlayerLeft?.(pid);
+          }
         };
 
         conn.on('close', handleLeave);
@@ -185,7 +189,7 @@ export class HostManager {
   private sendToAll(msg: NetworkMessage): void {
     Object.values(this.connections).forEach((c) => {
       try {
-        c.send(msg);
+        if (c.open) c.send(msg);
       } catch {
         /* ignore */
       }

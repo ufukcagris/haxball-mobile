@@ -6,7 +6,7 @@ import { PlayButton } from '@/components/ui/PlayButton';
 import { SelectorButton } from '@/components/ui/SelectorButton';
 import { getSharedHost, resetSharedHost } from './CreateRoomScreen';
 import { getSharedGuest } from './JoinRoomScreen';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Toast } from '@/components/ui/Toast';
 import { tryAutoFullscreen } from '@/utils/fullscreen';
 
@@ -38,6 +38,7 @@ export function LobbyScreen({
   const [toast, setToast] = useState({ message: '', visible: false });
   const [chatInput, setChatInput] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const hasJoinedRef = useRef(false);
 
   const colors = [
     '#00e5ff',
@@ -70,6 +71,14 @@ export function LobbyScreen({
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [chatMessages]);
+
+  // Local welcome message
+  useEffect(() => {
+    if (!hasJoinedRef.current) {
+      addChatMessage('SİSTEM', 'Odaya katildin');
+      hasJoinedRef.current = true;
+    }
+  }, [addChatMessage]);
 
   // Sync guest with game start and lobby updates
   useEffect(() => {
