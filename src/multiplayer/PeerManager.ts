@@ -9,6 +9,13 @@ export class PeerManager {
   get isReady(): boolean { return !!this.peer && !this.peer.destroyed && !!this._peerId; }
 
   init(onOpen: (id: string) => void, onError: (err: string) => void, onConnection?: (conn: DataConnection) => void): void {
+    if (onConnection && this.peer) {
+      this.peer.on('connection', (conn) => {
+        console.log('[PeerManager] Incoming connection from:', conn.peer);
+        onConnection(conn);
+      });
+    }
+
     if (this.isReady && this._peerId) {
       onOpen(this._peerId);
       return;
