@@ -238,7 +238,7 @@ export class GameEngine {
       goalLimit: settings.goals || 0,
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
-      players: [], // Will be filled by initial layout
+      players: [],
       input: { dx: 0, dy: 0, kick: false, kickCharge: 0, kickHeld: false },
       kickCharging: false,
       prevInputDir: null,
@@ -246,60 +246,32 @@ export class GameEngine {
       isMulti: true,
     };
 
-    // Use specific kickoff layout for initial start
-    this.layoutKickoffPositions(players);
+    resetPositions(this.gameState, 'red');
+
+    const redPlayers = players.filter((p) => p.team === 'red');
+    const bluePlayers = players.filter((p) => p.team === 'blue');
+    const gsRed = this.gameState.players.filter((p) => p.team === 'red');
+    const gsBlue = this.gameState.players.filter((p) => p.team === 'blue');
+
+    redPlayers.forEach((p, i) => {
+      if (gsRed[i]) {
+        gsRed[i].peerId = p.id;
+        gsRed[i].nick = p.nick;
+        gsRed[i].isMe = p.id === myPeerId;
+      }
+    });
+    bluePlayers.forEach((p, i) => {
+      if (gsBlue[i]) {
+        gsBlue[i].peerId = p.id;
+        gsBlue[i].nick = p.nick;
+        gsBlue[i].isMe = p.id === myPeerId;
+      }
+    });
 
     this.remoteInputs = {};
     this.keyboardInput.setGameState(this.gameState);
     this.touchInput.setGameState(this.gameState);
     this.emitHUD();
-  }
-
-  private layoutKickoffPositions(players: MultiPlayerInfo[]): void {
-    const gs = this.gameState;
-    if (!gs) return;
-
-    const redPlayers = players.filter((p) => p.team === 'red');
-    const bluePlayers = players.filter((p) => p.team === 'blue');
-
-    const getTeamPos = (list: MultiPlayerInfo[], team: 'red' | 'blue') => {
-      return list.map((p, i) => {
-        // Kickoff formations: 1 center, others spread
-        // If list is empty, return []
-        const spacing = gs.fh / (list.length > 1 ? list.length - 1 : 1);
-        const startY = list.length > 1 ? gs.oy : gs.oy + gs.fh / 2;
-
-        let targetX, targetY;
-        if (team === 'red') {
-          targetX = gs.ox + gs.fw * 0.28;
-        } else {
-          targetX = gs.ox + gs.fw * 0.72;
-        }
-
-        // Always center at least one player
-        if (list.length === 1) {
-          targetY = gs.oy + gs.fh / 2;
-        } else if (list.length === 2) {
-          // Special case for 2: One center, one spread?
-          // User wants one center always.
-          targetY = i === 0 ? gs.oy + gs.fh / 2 : gs.oy + gs.fh * 0.25;
-        } else {
-          // Standard spread for 3+
-          targetY = startY + i * spacing;
-        }
-
-        const pl = createPlayer(targetX, targetY, gs.pr, team, true);
-        pl.peerId = p.id;
-        pl.nick = p.nick;
-        pl.isMe = p.id === this.myPeerId;
-        return pl;
-      });
-    };
-
-    gs.players = [
-      ...getTeamPos(redPlayers, 'red'),
-      ...getTeamPos(bluePlayers, 'blue'),
-    ];
   }
 
   updateMultiPlayers(players: MultiPlayerInfo[]): void {
@@ -314,25 +286,12 @@ export class GameEngine {
 
     const processList = (list: MultiPlayerInfo[], team: 'red' | 'blue') => {
       const reversed = [...list].reverse();
-
       reversed.forEach((p, i) => {
         const existing = oldPlayers.find((op) => op.peerId === p.id);
-
         const backX = team === 'red' ? gs.ox - gs.gd : gs.ox + gs.fw + gs.gd;
         const direction = team === 'red' ? 1 : -1;
-
-        // Dynamic centering logic for mid-game updates too
-        // If 1 person, tam orta. If 2+ people, offset them but keep balance.
         const targetX = backX + direction * (i * gs.pr * 2.2 + gs.pr);
-
-        // Vertical logic: 1st player is ALWAYS centered.
-        // Others are spread around the center.
-        let targetY = gs.oy + gs.fh / 2;
-        if (i > 0) {
-          const offset = Math.ceil(i / 2) * gs.pr * 2.5;
-          const sign = i % 2 === 0 ? 1 : -1;
-          targetY += sign * offset;
-        }
+        const targetY = gs.oy + gs.fh / 2;
 
         if (existing) {
           if (existing.team !== team) {
@@ -342,7 +301,6 @@ export class GameEngine {
             existing.vx = 0;
             existing.vy = 0;
           } else {
-            // Push existing players to their balanced positions
             existing.x = targetX;
             existing.y = targetY;
           }
@@ -360,7 +318,6 @@ export class GameEngine {
 
     processList(redPlayers, 'red');
     processList(bluePlayers, 'blue');
-
     gs.players = newPlayers;
     this.emitHUD();
   }
@@ -421,11 +378,9 @@ export class GameEngine {
 
     msg.players.forEach((rp: NormalizedPlayer) => {
       let local = gs.players.find((p: PlayerState) => p.peerId === rp.peerId);
-
       const isActuallyMe = rp.peerId === (this.myPeerId || '');
 
       if (!local) {
-        console.log('[GameEngine] Adding missing player from sync:', rp.peerId);
         local = createPlayer(
           denormX(rp.nx),
           denormY(rp.ny),
