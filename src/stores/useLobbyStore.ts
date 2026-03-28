@@ -6,6 +6,7 @@ interface LobbyStoreState {
   myRole: MyRole;
   myPeerId: string | null;
   selectedChipId: string | null;
+  chatMessages: Array<{ nick: string; message: string; id: number }>;
 
   setLobbyState: (state: LobbyState) => void;
   setMyRole: (role: MyRole) => void;
@@ -17,6 +18,7 @@ interface LobbyStoreState {
     team: 'red' | 'blue' | 'spec',
   ) => void;
   removeFromLobby: (pid: string) => void;
+  addChatMessage: (nick: string, message: string) => void;
   resetLobby: () => void;
 }
 
@@ -35,6 +37,7 @@ export const useLobbyStore = create<LobbyStoreState>((set) => ({
   myRole: 'solo',
   myPeerId: null,
   selectedChipId: null,
+  chatMessages: [],
 
   setLobbyState: (state) => set({ lobbyState: state }),
   setMyRole: (role) => set({ myRole: role }),
@@ -62,11 +65,20 @@ export const useLobbyStore = create<LobbyStoreState>((set) => ({
       return { lobbyState: ls };
     }),
 
+  addChatMessage: (nick, message) =>
+    set((state) => ({
+      chatMessages: [
+        ...state.chatMessages.slice(-19),
+        { nick, message, id: Date.now() + Math.random() },
+      ],
+    })),
+
   resetLobby: () =>
     set({
       lobbyState: { ...defaultLobby, red: [], blue: [], spec: [] },
       myRole: 'solo',
       myPeerId: null,
       selectedChipId: null,
+      chatMessages: [],
     }),
 }));

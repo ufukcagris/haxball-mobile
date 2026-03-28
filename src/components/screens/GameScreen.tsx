@@ -59,6 +59,12 @@ export function GameScreen() {
     };
     engine.onGoal = (team) => {
       useGameStore.getState().setGoal(team);
+      
+      // Broadcast goal if Host
+      if (myRole === 'host') {
+        getSharedHost()?.broadcastGoal(team);
+      }
+
       const flash = goalFlashRef.current;
       if (flash) {
         flash.className = `goal-flash flash-${team}`;

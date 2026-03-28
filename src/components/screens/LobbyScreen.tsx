@@ -6,7 +6,7 @@ import { PlayButton } from '@/components/ui/PlayButton';
 import { SelectorButton } from '@/components/ui/SelectorButton';
 import { getSharedHost, resetSharedHost } from './CreateRoomScreen';
 import { getSharedGuest } from './JoinRoomScreen';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Toast } from '@/components/ui/Toast';
 import { tryAutoFullscreen } from '@/utils/fullscreen';
 
@@ -31,16 +31,25 @@ export function LobbyScreen({
     setLobbyState,
     resetLobby,
     addToLobby,
+    chatMessages,
+    addChatMessage,
   } = useLobbyStore();
 
   const [toast, setToast] = useState({ message: '', visible: false });
-  const [chatMessages, setChatMessages] = useState<Array<{ nick: string; message: string; id: number }>>([]);
   const [chatInput, setChatInput] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   const colors = [
-    '#00e5ff', '#ff3d71', '#00ff88', '#ffd600', '#ff8800', 
-    '#ff00ff', '#ffffff', '#4ade80', '#60a5fa', '#f87171'
+    '#00e5ff',
+    '#ff3d71',
+    '#00ff88',
+    '#ffd600',
+    '#ff8800',
+    '#ff00ff',
+    '#ffffff',
+    '#4ade80',
+    '#60a5fa',
+    '#f87171',
   ];
 
   const getNickColor = (nick: string) => {
@@ -54,10 +63,6 @@ export function LobbyScreen({
   const ls = lobbyState;
   const isHost = myRole === 'host';
   const total = ls.red.length + ls.blue.length + ls.spec.length;
-
-  const addLocalChat = useCallback((nick: string, message: string) => {
-    setChatMessages(prev => [...prev.slice(-19), { nick, message, id: Date.now() + Math.random() }]);
-  }, []);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -78,15 +83,15 @@ export function LobbyScreen({
         guest.onLobbyUpdate = (state) => {
           setLobbyState(state);
         };
-        guest.onChatMessage = (nick, msg) => addLocalChat(nick, msg);
+        guest.onChatMessage = (nick, msg) => addChatMessage(nick, msg);
       }
     } else {
       const host = getSharedHost();
       if (host) {
-        host.onChatMessage = (nick, msg) => addLocalChat(nick, msg);
+        host.onChatMessage = (nick, msg) => addChatMessage(nick, msg);
       }
     }
-  }, [isHost, setScreen, setLobbyState, isOverlay, addLocalChat]);
+  }, [isHost, setScreen, setLobbyState, isOverlay, addChatMessage]);
 
   // Broadcast lobby changes when host modifies state
   useEffect(() => {
@@ -98,10 +103,10 @@ export function LobbyScreen({
   const sendChat = () => {
     const msg = chatInput.trim();
     if (!msg) return;
-    
+
     if (isHost) {
       getSharedHost()?.broadcastChat(config.nick, msg);
-      addLocalChat(config.nick, msg);
+      addChatMessage(config.nick, msg);
     } else {
       getSharedGuest()?.sendChat(config.nick, msg);
     }
@@ -282,7 +287,7 @@ export function LobbyScreen({
         color='var(--accent)'
       />
 
-      <div className="w-[min(98vw,900px)] flex flex-col gap-3 shrink-0">
+      <div className='w-[min(98vw,900px)] flex flex-col gap-3 shrink-0'>
         {/* Header */}
         <div className='flex items-center justify-between gap-2 z-1'>
           <div className='flex-1 min-w-0'>
@@ -317,34 +322,61 @@ export function LobbyScreen({
         </div>
 
         {/* Settings */}
-        <div className='bg-[rgba(17,24,39,0.75)] rounded-[14px] p-2.5 grid grid-cols-3 gap-2 z-1'
+        <div
+          className='bg-[rgba(17,24,39,0.75)] rounded-[14px] p-2.5 grid grid-cols-3 gap-2 z-1'
           style={{ pointerEvents: isHost ? 'all' : 'none' }}
         >
           <div className='flex flex-col gap-1'>
-            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>Saha</div>
+            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
+              Saha
+            </div>
             <div className='flex gap-1 flex-wrap'>
               {(['small', 'medium', 'large'] as const).map((v) => (
-                <SelectorButton key={v} active={ls.settings.pitch === v} onClick={() => setSetting('pitch', v)} className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'>
+                <SelectorButton
+                  key={v}
+                  active={ls.settings.pitch === v}
+                  onClick={() => setSetting('pitch', v)}
+                  className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'
+                >
                   {v === 'small' ? 'Kucuk' : v === 'medium' ? 'Orta' : 'Buyuk'}
                 </SelectorButton>
               ))}
             </div>
           </div>
           <div className='flex flex-col gap-1'>
-            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>Sure</div>
+            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
+              Sure
+            </div>
             <div className='flex gap-1 flex-wrap'>
-              {[{ v: 120, l: '2dk' }, { v: 180, l: '3dk' }, { v: 300, l: '5dk' }, { v: 0, l: '∞' }].map((t) => (
-                <SelectorButton key={t.v} active={ls.settings.time === t.v} onClick={() => setSetting('time', t.v)} className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'>
+              {[
+                { v: 120, l: '2dk' },
+                { v: 180, l: '3dk' },
+                { v: 300, l: '5dk' },
+                { v: 0, l: '∞' },
+              ].map((t) => (
+                <SelectorButton
+                  key={t.v}
+                  active={ls.settings.time === t.v}
+                  onClick={() => setSetting('time', t.v)}
+                  className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'
+                >
                   {t.l}
                 </SelectorButton>
               ))}
             </div>
           </div>
           <div className='flex flex-col gap-1'>
-            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>Gol</div>
+            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
+              Gol
+            </div>
             <div className='flex gap-1 flex-wrap'>
               {[1, 3, 5, 0].map((g) => (
-                <SelectorButton key={g} active={ls.settings.goals === g} onClick={() => setSetting('goals', g)} className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'>
+                <SelectorButton
+                  key={g}
+                  active={ls.settings.goals === g}
+                  onClick={() => setSetting('goals', g)}
+                  className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'
+                >
                   {g === 0 ? '∞' : g}
                 </SelectorButton>
               ))}
@@ -353,30 +385,38 @@ export function LobbyScreen({
         </div>
 
         {/* Chat Area */}
-        <div className='h-[160px] flex flex-col bg-[rgba(17,24,39,0.75)] rounded-[14px] border border-white/5 overflow-hidden'>
-          <div className='flex-1 overflow-y-auto p-2 space-y-1.5' ref={chatScrollRef}>
+        <div className='h-[160px] flex flex-col bg-[rgba(17,24,39,0.75)] rounded-[14px] border border-white/5 overflow-hidden shrink-0'>
+          <div
+            className='flex-1 overflow-y-auto p-2 space-y-1.5'
+            ref={chatScrollRef}
+          >
             {chatMessages.length === 0 && (
               <div className='h-full flex items-center justify-center text-(--text-dim) text-[0.65rem] italic opacity-50 uppercase tracking-widest'>
                 Sohbet baslasin...
               </div>
             )}
-            {chatMessages.map(m => (
+            {chatMessages.map((m) => (
               <div key={m.id} className='text-[0.75rem] leading-tight break-all'>
-                <span className='font-black mr-1.5 uppercase' style={{ color: getNickColor(m.nick) }}>[{m.nick}]:</span>
+                <span
+                  className='font-black mr-1.5'
+                  style={{ color: getNickColor(m.nick) }}
+                >
+                  [{m.nick}]:
+                </span>
                 <span className='text-white/90'>{m.message}</span>
               </div>
             ))}
           </div>
           <div className='p-1.5 bg-black/20 border-t border-white/5 flex gap-1.5'>
-            <input 
-              type="text"
+            <input
+              type='text'
               value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
+              onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={onChatKeyDown}
-              placeholder="Mesaj yaz..."
+              placeholder='Mesaj yaz...'
               className='flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-[0.8rem] text-white focus:outline-none focus:border-(--accent)/50'
             />
-            <button 
+            <button
               onClick={sendChat}
               className='bg-(--accent) text-black text-[0.7rem] font-black px-3 rounded-lg active:scale-95 transition-transform uppercase'
             >
@@ -389,19 +429,46 @@ export function LobbyScreen({
         <div className='flex gap-2 z-1 pb-2'>
           {!isOverlay ? (
             <>
-              <PlayButton onClick={leaveLobby} variant='secondary' className='flex-none w-[80px] py-[12px]! text-[0.9rem]! rounded-[11px]!'>← Cik</PlayButton>
+              <PlayButton
+                onClick={leaveLobby}
+                variant='secondary'
+                className='flex-none w-[80px] py-[12px]! text-[0.9rem]! rounded-[11px]!'
+              >
+                ← Cik
+              </PlayButton>
               {isHost && (
-                <PlayButton onClick={randomize} variant='purple' className='flex-1 py-[12px]! text-[0.9rem]! rounded-[11px]!'>🎲 Rastgele</PlayButton>
+                <PlayButton
+                  onClick={randomize}
+                  variant='purple'
+                  className='flex-1 py-[12px]! text-[0.9rem]! rounded-[11px]!'
+                >
+                  🎲 Rastgele
+                </PlayButton>
               )}
-              <PlayButton onClick={startMatch} disabled={!canStart || !isHost} className='flex-2 py-[12px]! text-[0.9rem]! rounded-[11px]!'>
+              <PlayButton
+                onClick={startMatch}
+                disabled={!canStart || !isHost}
+                className='flex-2 py-[12px]! text-[0.9rem]! rounded-[11px]!'
+              >
                 {isHost ? '⚽ MACA BASLA' : 'Host baslatacak...'}
               </PlayButton>
             </>
           ) : (
             <>
-              <PlayButton onClick={onBackToGame || (() => {})} className='flex-2 py-[12px]! text-[0.9rem]! rounded-[11px]!'>← OYUNA DON</PlayButton>
+              <PlayButton
+                onClick={onBackToGame || (() => {})}
+                className='flex-2 py-[12px]! text-[0.9rem]! rounded-[11px]!'
+              >
+                ← OYUNA DON
+              </PlayButton>
               {isHost && (
-                <PlayButton onClick={onEndMatch || (() => {})} variant='secondary' className='flex-1 py-[12px]! text-[0.9rem]! rounded-[11px]! border-red-500/50! text-red-400!'>MACI BITIR</PlayButton>
+                <PlayButton
+                  onClick={onEndMatch || (() => {})}
+                  variant='secondary'
+                  className='flex-1 py-[12px]! text-[0.9rem]! rounded-[11px]! border-red-500/50! text-red-400!'
+                >
+                  MACI BITIR
+                </PlayButton>
               )}
             </>
           )}
