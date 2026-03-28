@@ -21,17 +21,25 @@ export class HostManager {
       () => {},
       (conn: DataConnection) => {
         const pid = conn.peer;
+        console.log('[HostManager] Peer connecting:', pid);
         this.connections[pid] = conn;
 
         const handleJoin = () => {
+          console.log('[HostManager] Connection OPEN with:', pid);
           const nick = (conn.metadata as any)?.nick || 'Oyuncu';
           this.onPlayerJoined?.(pid, nick);
           
           // Send current lobby state immediately to the newcomer
+          console.log('[HostManager] Sending initial lobby state to:', pid);
           setTimeout(() => {
             const { useLobbyStore } = require('@/stores/useLobbyStore');
             const currentLobby = useLobbyStore.getState().lobbyState;
-            try { conn.send({ type: 'lobby', state: currentLobby }); } catch (e) {}
+            try { 
+              conn.send({ type: 'lobby', state: currentLobby }); 
+              console.log('[HostManager] Lobby state sent successfully to:', pid);
+            } catch (e) {
+              console.error('[HostManager] Error sending lobby state to:', pid, e);
+            }
           }, 500);
         };
 
@@ -43,6 +51,7 @@ export class HostManager {
 
         conn.on('data', (d) => {
           const msg = d as NetworkMessage;
+          console.log(`[HostManager] Received message from ${pid}:`, msg.type);
           if (msg.type === 'input') {
             this.onRemoteInput?.(pid, { dx: msg.dx, dy: msg.dy, kickHeld: msg.kickHeld });
           }

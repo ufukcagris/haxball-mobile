@@ -27,6 +27,7 @@ export class PeerManager {
 
     this.isConnecting = true;
     const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    console.log('[PeerManager] Initializing Peer...', { isSecure });
     
     this.peer = new Peer({
       secure: isSecure,
@@ -41,18 +42,23 @@ export class PeerManager {
     });
 
     this.peer.on('open', (id) => {
+      console.log('[PeerManager] Peer opened with ID:', id);
       this._peerId = id;
       this.isConnecting = false;
       onOpen(id);
     });
 
     this.peer.on('error', (e) => {
+      console.error('[PeerManager] Peer error:', e.type, e);
       this.isConnecting = false;
       onError(e.type);
     });
 
     if (onConnection) {
-      this.peer.on('connection', onConnection);
+      this.peer.on('connection', (conn) => {
+        console.log('[PeerManager] Incoming connection from:', conn.peer);
+        onConnection(conn);
+      });
     }
   }
 

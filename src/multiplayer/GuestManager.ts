@@ -20,17 +20,23 @@ export class GuestManager {
   }
 
   connect(code: string, nick: string): void {
+    console.log('[GuestManager] Attempting to connect to host:', code);
     const conn = this.peerManager.connect(code, { nick });
-    if (!conn) return;
+    if (!conn) {
+      console.error('[GuestManager] PeerManager failed to return a connection object');
+      return;
+    }
 
     this.hostConn = conn;
 
     conn.on('open', () => {
+      console.log('[GuestManager] Connection to host OPENED. Sending join message...');
       conn.send({ type: 'join', nick });
     });
 
     conn.on('data', (d) => {
       const msg = d as NetworkMessage;
+      console.log('[GuestManager] Received message from host:', msg.type);
       switch (msg.type) {
         case 'lobby':
           this.onLobbyUpdate?.(msg.state);

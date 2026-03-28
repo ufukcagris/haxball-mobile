@@ -16,20 +16,40 @@ export function JoinRoomScreen() {
   const { config, setScreen } = useAppStore();
   const { setLobbyState, setMyRole, setMyPeerId } = useLobbyStore();
   const [code, setCode] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('Hazirlaniyor...');
   const [statusCls, setStatusCls] = useState('');
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const peer = getSharedPeer();
-    if (!peer.isReady) {
+    
+    const onInit = (id: string) => {
+      setStatus('✅ Hazir');
+      setStatusCls('ok');
+      setReady(true);
+      setMyPeerId(id);
+    };
+
+    if (peer.isReady && peer.peerId) {
+      onInit(peer.peerId);
+    } else {
       peer.init(
-        (id) => setMyPeerId(id),
-        (err) => { setStatus('❌ Baglanti hatasi: ' + err); setStatusCls('err'); }
+        onInit,
+        (err) => { 
+          setStatus('❌ Baglanti hatasi: ' + err); 
+          setStatusCls('err'); 
+          setReady(false);
+        }
       );
     }
   }, [setMyPeerId]);
 
   const joinRoom = () => {
+    if (!ready) {
+      setStatus('Henüz hazir degil, bekle...');
+      setStatusCls('err');
+      return;
+    }
     if (!code.trim()) {
       setStatus('Kod gir!');
       setStatusCls('err');
@@ -88,7 +108,7 @@ export function JoinRoomScreen() {
           {status}
         </div>
 
-        <PlayButton onClick={joinRoom} className="w-full">
+        <PlayButton onClick={joinRoom} disabled={!ready} className="w-full">
           🚀 KATIL
         </PlayButton>
         <PlayButton onClick={() => setScreen('menu')} variant="secondary" className="w-full">
