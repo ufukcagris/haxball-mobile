@@ -238,7 +238,13 @@ export class GameEngine {
       goalLimit: settings.goals || 0,
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
-      players: [],
+      players: players.map((p) => {
+        const pl = createPlayer(0, 0, pr, p.team, true);
+        pl.peerId = p.id;
+        pl.nick = p.nick;
+        pl.isMe = p.id === myPeerId;
+        return pl;
+      }),
       input: { dx: 0, dy: 0, kick: false, kickCharge: 0, kickHeld: false },
       kickCharging: false,
       prevInputDir: null,
@@ -247,26 +253,6 @@ export class GameEngine {
     };
 
     resetPositions(this.gameState, 'red');
-
-    const redPlayers = players.filter((p) => p.team === 'red');
-    const bluePlayers = players.filter((p) => p.team === 'blue');
-    const gsRed = this.gameState.players.filter((p) => p.team === 'red');
-    const gsBlue = this.gameState.players.filter((p) => p.team === 'blue');
-
-    redPlayers.forEach((p, i) => {
-      if (gsRed[i]) {
-        gsRed[i].peerId = p.id;
-        gsRed[i].nick = p.nick;
-        gsRed[i].isMe = p.id === myPeerId;
-      }
-    });
-    bluePlayers.forEach((p, i) => {
-      if (gsBlue[i]) {
-        gsBlue[i].peerId = p.id;
-        gsBlue[i].nick = p.nick;
-        gsBlue[i].isMe = p.id === myPeerId;
-      }
-    });
 
     this.remoteInputs = {};
     this.keyboardInput.setGameState(this.gameState);
