@@ -26,12 +26,16 @@ export class PeerManager {
     }
 
     this.isConnecting = true;
+    const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    
     this.peer = new Peer({
+      secure: isSecure,
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun.services.mozilla.com' },
         ]
       }
     });

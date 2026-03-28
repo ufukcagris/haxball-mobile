@@ -26,6 +26,13 @@ export class HostManager {
         const handleJoin = () => {
           const nick = (conn.metadata as any)?.nick || 'Oyuncu';
           this.onPlayerJoined?.(pid, nick);
+          
+          // Send current lobby state immediately to the newcomer
+          setTimeout(() => {
+            const { useLobbyStore } = require('@/stores/useLobbyStore');
+            const currentLobby = useLobbyStore.getState().lobbyState;
+            try { conn.send({ type: 'lobby', state: currentLobby }); } catch (e) {}
+          }, 500);
         };
 
         if (conn.open) {
