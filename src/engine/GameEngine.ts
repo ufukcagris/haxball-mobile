@@ -106,7 +106,6 @@ export class GameEngine {
 
       const newScale = Math.min((W - 20) / pc.fw, (H - 20) / pc.fh, MAX_SCALE);
 
-      // Update dimensions
       gs.scale = newScale;
       gs.fw = pc.fw * newScale;
       gs.fh = pc.fh * newScale;
@@ -118,10 +117,10 @@ export class GameEngine {
       gs.gd = pc.goalDepth * newScale;
       gs.wt = pc.wallT * newScale;
 
-      // Safety: If oldScale was 0 or invalid, don't try to interpolate positions
       if (!oldScale || oldScale <= 0) return;
 
       const scaleRatio = newScale / oldScale;
+
       gs.ball.x = gs.ox + (gs.ball.x - oldOx) * scaleRatio;
       gs.ball.y = gs.oy + (gs.ball.y - oldOy) * scaleRatio;
       gs.ball.r = gs.br;
@@ -215,16 +214,6 @@ export class GameEngine {
     const pr = PLAYER_RADIUS * scale;
     const br = BALL_RADIUS * scale;
 
-    const gsPlayers: PlayerState[] = this.createMultiGamePlayers(
-      players,
-      ox,
-      oy,
-      fw,
-      fh,
-      pr,
-      myPeerId,
-    );
-
     this.gameState = {
       pc,
       scale,
@@ -249,7 +238,7 @@ export class GameEngine {
       goalLimit: settings.goals || 0,
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
-      players: gsPlayers,
+      players: [], // Will be filled by initial layout
       input: { dx: 0, dy: 0, kick: false, kickCharge: 0, kickHeld: false },
       kickCharging: false,
       prevInputDir: null,
@@ -257,10 +246,60 @@ export class GameEngine {
       isMulti: true,
     };
 
+    // Use specific kickoff layout for initial start
+    this.layoutKickoffPositions(players);
+
     this.remoteInputs = {};
     this.keyboardInput.setGameState(this.gameState);
     this.touchInput.setGameState(this.gameState);
     this.emitHUD();
+  }
+
+  private layoutKickoffPositions(players: MultiPlayerInfo[]): void {
+    const gs = this.gameState;
+    if (!gs) return;
+
+    const redPlayers = players.filter((p) => p.team === 'red');
+    const bluePlayers = players.filter((p) => p.team === 'blue');
+
+    const getTeamPos = (list: MultiPlayerInfo[], team: 'red' | 'blue') => {
+      return list.map((p, i) => {
+        // Kickoff formations: 1 center, others spread
+        // If list is empty, return []
+        const spacing = gs.fh / (list.length > 1 ? list.length - 1 : 1);
+        const startY = list.length > 1 ? gs.oy : gs.oy + gs.fh / 2;
+
+        let targetX, targetY;
+        if (team === 'red') {
+          targetX = gs.ox + gs.fw * 0.28;
+        } else {
+          targetX = gs.ox + gs.fw * 0.72;
+        }
+
+        // Always center at least one player
+        if (list.length === 1) {
+          targetY = gs.oy + gs.fh / 2;
+        } else if (list.length === 2) {
+          // Special case for 2: One center, one spread?
+          // User wants one center always.
+          targetY = i === 0 ? gs.oy + gs.fh / 2 : gs.oy + gs.fh * 0.25;
+        } else {
+          // Standard spread for 3+
+          targetY = startY + i * spacing;
+        }
+
+        const pl = createPlayer(targetX, targetY, gs.pr, team, true);
+        pl.peerId = p.id;
+        pl.nick = p.nick;
+        pl.isMe = p.id === this.myPeerId;
+        return pl;
+      });
+    };
+
+    gs.players = [
+      ...getTeamPos(redPlayers, 'red'),
+      ...getTeamPos(bluePlayers, 'blue'),
+    ];
   }
 
   updateMultiPlayers(players: MultiPlayerInfo[]): void {
@@ -274,24 +313,28 @@ export class GameEngine {
     const bluePlayers = players.filter((p) => p.team === 'blue');
 
     const processList = (list: MultiPlayerInfo[], team: 'red' | 'blue') => {
-      // Reverse the list so the first added player is 'pushed' furthest forward
-      // and the last added player stays at the extreme back.
       const reversed = [...list].reverse();
-      
+
       reversed.forEach((p, i) => {
         const existing = oldPlayers.find((op) => op.peerId === p.id);
-        
-        // targetX: Start from the very back of the net and move inward for each player
-        // Red back: ox - gd, Blue back: ox + fw + gd
+
         const backX = team === 'red' ? gs.ox - gs.gd : gs.ox + gs.fw + gs.gd;
         const direction = team === 'red' ? 1 : -1;
-        
-        // Each player is offset by their diameter + a small gap (2.2 * radius)
-        const targetX = backX + (direction * (i * gs.pr * 2.2 + gs.pr));
-        const targetY = gs.oy + gs.fh / 2;
+
+        // Dynamic centering logic for mid-game updates too
+        // If 1 person, tam orta. If 2+ people, offset them but keep balance.
+        const targetX = backX + direction * (i * gs.pr * 2.2 + gs.pr);
+
+        // Vertical logic: 1st player is ALWAYS centered.
+        // Others are spread around the center.
+        let targetY = gs.oy + gs.fh / 2;
+        if (i > 0) {
+          const offset = Math.ceil(i / 2) * gs.pr * 2.5;
+          const sign = i % 2 === 0 ? 1 : -1;
+          targetY += sign * offset;
+        }
 
         if (existing) {
-          // Update position if team changed or they are not in the 'line' yet
           if (existing.team !== team) {
             existing.team = team;
             existing.x = targetX;
@@ -299,8 +342,7 @@ export class GameEngine {
             existing.vx = 0;
             existing.vy = 0;
           } else {
-            // Smoothly move to their new 'pushed' position instead of snapping?
-            // Actually, for consistency during team shuffle, snapping is better.
+            // Push existing players to their balanced positions
             existing.x = targetX;
             existing.y = targetY;
           }
@@ -321,50 +363,6 @@ export class GameEngine {
 
     gs.players = newPlayers;
     this.emitHUD();
-  }
-
-  private createMultiGamePlayers(
-    players: MultiPlayerInfo[],
-    ox: number,
-    oy: number,
-    fw: number,
-    fh: number,
-    pr: number,
-    myPeerId: string,
-  ): PlayerState[] {
-    const redPlayers = players.filter((p) => p.team === 'red');
-    const bluePlayers = players.filter((p) => p.team === 'blue');
-
-    return [
-      ...redPlayers.map((p, i) => {
-        const spacing = fh / (redPlayers.length + 1);
-        const pl = createPlayer(
-          ox + pr * 2.5,
-          oy + spacing * (i + 1),
-          pr,
-          'red',
-          true,
-        );
-        pl.peerId = p.id;
-        pl.nick = p.nick;
-        pl.isMe = p.id === myPeerId;
-        return pl;
-      }),
-      ...bluePlayers.map((p, i) => {
-        const spacing = fh / (bluePlayers.length + 1);
-        const pl = createPlayer(
-          ox + fw - pr * 2.5,
-          oy + spacing * (i + 1),
-          pr,
-          'blue',
-          true,
-        );
-        pl.peerId = p.id;
-        pl.nick = p.nick;
-        pl.isMe = p.id === myPeerId;
-        return pl;
-      }),
-    ];
   }
 
   start(): void {
@@ -445,17 +443,20 @@ export class GameEngine {
       local.vx = denormVx(rp.nvx);
       local.vy = denormVy(rp.nvy);
       local.kickFlash = rp.kickFlash;
-      local.nick = rp.nick; // Sync nick
-      local.team = rp.team; // Sync team
-      local.isMe = isActuallyMe; // Ensure self-identification is always correct
+      local.nick = rp.nick;
+      local.team = rp.team;
+      local.isMe = isActuallyMe;
 
-      // Sync chat bubble from network
       if (rp.chatMessage) {
-        local.chatBubble = { message: rp.chatMessage, timer: rp.chatTimer || 0 };
+        local.chatBubble = {
+          message: rp.chatMessage,
+          timer: rp.chatTimer || 0,
+        };
       } else {
         local.chatBubble = undefined;
       }
     });
+
     if (msg.players.length < gs.players.length) {
       const hostPids = msg.players.map((p) => p.peerId);
       gs.players = gs.players.filter(
@@ -515,10 +516,10 @@ export class GameEngine {
 
   public setTyping(peerId: string, typing: boolean): void {
     if (!this.gameState) return;
-    const p = this.gameState.players.find(x => x.peerId === peerId);
+    const p = this.gameState.players.find((x) => x.peerId === peerId);
     if (p) {
       if (typing) {
-        p.chatBubble = { message: '...', timer: 999999 }; // Persist until manual off
+        p.chatBubble = { message: '...', timer: 999999 };
       } else {
         p.chatBubble = undefined;
       }
@@ -527,9 +528,9 @@ export class GameEngine {
 
   public triggerChatBubble(peerId: string, message: string): void {
     if (!this.gameState) return;
-    const p = this.gameState.players.find(x => x.peerId === peerId);
+    const p = this.gameState.players.find((x) => x.peerId === peerId);
     if (p) {
-      p.chatBubble = { message, timer: 240 }; // 4 seconds at 60fps
+      p.chatBubble = { message, timer: 240 };
     }
   }
 
@@ -585,6 +586,13 @@ export class GameEngine {
     }
 
     const localPlayer = this.getLocalPlayer();
+
+    gs.players.forEach((p: PlayerState) => {
+      if (p.chatBubble) {
+        p.chatBubble.timer--;
+        if (p.chatBubble.timer <= 0) p.chatBubble = undefined;
+      }
+    });
 
     if (!localPlayer) {
       gs.players.forEach((pl: PlayerState) => {
