@@ -286,10 +286,8 @@ export class GameEngine {
             existing.y = targetY;
             existing.vx = 0;
             existing.vy = 0;
-          } else {
-            existing.x = targetX;
-            existing.y = targetY;
           }
+          // If team is same, don't override x/y to preserve kickoff/active positions
           existing.nick = p.nick;
           newPlayers.push(existing);
         } else {
