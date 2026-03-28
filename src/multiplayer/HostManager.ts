@@ -1,12 +1,18 @@
 import { DataConnection } from 'peerjs';
 import { PeerManager } from './PeerManager';
 import { useLobbyStore } from '@/stores/useLobbyStore';
-import type { LobbyState, NetworkMessage, LobbySettings, MultiPlayerNetInfo, LobbyPlayer } from './types';
+import type {
+  LobbyState,
+  NetworkMessage,
+  LobbySettings,
+  MultiPlayerNetInfo,
+  LobbyPlayer,
+} from './types';
 
 export class HostManager {
   private peerManager: PeerManager;
   private connections: Record<string, DataConnection> = {};
-  private playerNicks: Record<string, string> = {}; // Track nicks for leave messages
+  private playerNicks: Record<string, string> = {};
   private netSendCounter = 0;
   private isMatchLive = false;
 
@@ -31,14 +37,28 @@ export class HostManager {
       () => {},
       (conn: DataConnection) => {
         const pid = conn.peer;
-        console.log('[HostManager] Peer connecting:', pid);
+        console.log('[HostManager] Incoming connection attempt from:', pid);
+
+        // CLEANUP: If there's an existing connection for this pid, close it first
+        if (this.connections[pid]) {
+          console.log(
+            '[HostManager] Cleaning up existing stale connection for:',
+            pid,
+          );
+          try {
+            this.connections[pid].close();
+          } catch {
+            /* ignore */
+          }
+          delete this.connections[pid];
+          delete this.playerNicks[pid];
+        }
 
         // Check capacity
         const ls = useLobbyStore.getState().lobbyState;
-        const currentCount = ls.red.length + ls.blue.length + ls.spec.length; // includes host
+        const currentCount = ls.red.length + ls.blue.length + ls.spec.length;
 
         if (currentCount >= ls.maxPlayers) {
-          console.warn('[HostManager] Room is full. Rejecting:', pid);
           setTimeout(() => {
             try {
               conn.send({ type: 'error', message: 'Oda dolu!' });
@@ -53,17 +73,15 @@ export class HostManager {
         this.connections[pid] = conn;
 
         const handleJoin = () => {
-          // STRICT CHECK: Don't process join twice for the same connection
-          if (this.playerNicks[pid]) {
-            console.log('[HostManager] Ignoring duplicate join for:', pid);
-            return;
-          }
+          // If we already assigned a nick to THIS SPECIFIC connection object, stop.
+          const connExt = conn as DataConnection & { _haxJoined?: boolean };
+          if (connExt._haxJoined) return;
+          connExt._haxJoined = true;
 
-          console.log('[HostManager] Connection OPEN with:', pid);
+          console.log('[HostManager] Processing join for:', pid);
           const metadata = conn.metadata as { nick?: string } | undefined;
           let nick = (metadata?.nick || 'Oyuncu').trim();
 
-          // Ensure unique nick - only check existing players
           const currentLs = useLobbyStore.getState().lobbyState;
           const allNicks = [
             ...currentLs.red.map((p: LobbyPlayer) => p.nick),
@@ -83,62 +101,44 @@ export class HostManager {
 
           this.playerNicks[pid] = nick;
           this.onPlayerJoined?.(pid, nick);
-          
-          // Inform the guest about their final (possibly numbered) nickname
+
           try {
             conn.send({ type: 'nick_update', nick });
           } catch {
             /* ignore */
           }
-          
-          // System message: Joined (Broadcast to others)
+
           this.broadcastChat('SİSTEM', `${nick} odaya katildi`);
           this.onChatMessage?.('SİSTEM', `${nick} odaya katildi`);
 
-          // Send current lobby state immediately to the newcomer
-          console.log('[HostManager] Sending initial lobby state to:', pid);
           setTimeout(() => {
             const currentLobby = useLobbyStore.getState().lobbyState;
             try {
-              conn.send({ type: 'lobby', state: { ...currentLobby, isLive: this.isMatchLive } });
-              console.log(
-                '[HostManager] Lobby state sent successfully to:',
-                pid,
-              );
-            } catch (error) {
-              console.error(
-                '[HostManager] Error sending lobby state to:',
-                pid,
-                error,
-              );
+              conn.send({
+                type: 'lobby',
+                state: { ...currentLobby, isLive: this.isMatchLive },
+              });
+            } catch {
+              /* ignore */
             }
           }, 500);
         };
 
-        if (conn.open) {
-          handleJoin();
-        } else {
-          conn.on('open', handleJoin);
-        }
+        // Only use 'open' event, don't check conn.open immediately to avoid race conditions with React
+        conn.on('open', handleJoin);
 
         conn.on('data', (d) => {
           const msg = d as NetworkMessage;
-          
-          // We no longer handle 'join' here to prevent duplicates.
-          // Everything is handled by handleJoin triggered via connection/open events.
-
           if (msg.type === 'chat') {
             const authoritativeNick = this.playerNicks[pid] || msg.nick;
             this.onChatMessage?.(authoritativeNick, msg.message);
             this.broadcastChat(authoritativeNick, msg.message);
           }
-
           if (msg.type === 'typing') {
             const authoritativeNick = this.playerNicks[pid] || msg.nick;
             this.onPlayerTyping?.(authoritativeNick, msg.typing);
             this.broadcastTyping(authoritativeNick, msg.typing);
           }
-
           if (msg.type === 'input') {
             this.onRemoteInput?.(pid, {
               dx: msg.dx,
@@ -149,17 +149,17 @@ export class HostManager {
         });
 
         const handleLeave = () => {
+          // Only handle leave if it's the current active connection for this pid
+          if (this.connections[pid] !== conn) return;
+
           const nick = this.playerNicks[pid];
           if (nick) {
-            console.log('[HostManager] Player left:', nick);
             this.broadcastChat('SİSTEM', `${nick} odadan ayrildi`);
             this.onChatMessage?.('SİSTEM', `${nick} odadan ayrildi`);
             delete this.playerNicks[pid];
           }
-          if (this.connections[pid]) {
-            delete this.connections[pid];
-            this.onPlayerLeft?.(pid);
-          }
+          delete this.connections[pid];
+          this.onPlayerLeft?.(pid);
         };
 
         conn.on('close', handleLeave);
@@ -169,9 +169,9 @@ export class HostManager {
   }
 
   broadcastLobby(lobbyState: LobbyState): void {
-    const msg: NetworkMessage = { 
-      type: 'lobby', 
-      state: { ...lobbyState, isLive: this.isMatchLive } 
+    const msg: NetworkMessage = {
+      type: 'lobby',
+      state: { ...lobbyState, isLive: this.isMatchLive },
     };
     this.sendToAll(msg);
   }
@@ -181,8 +181,7 @@ export class HostManager {
     settings: LobbySettings,
   ): void {
     this.isMatchLive = true;
-    const msg: NetworkMessage = { type: 'game_start', players, settings };
-    this.sendToAll(msg);
+    this.sendToAll({ type: 'game_start', players, settings });
   }
 
   broadcastGameState(stateMsg: NetworkMessage): void {
