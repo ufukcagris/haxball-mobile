@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useLobbyStore } from '@/stores/useLobbyStore';
 import { MenuCard } from '@/components/ui/MenuCard';
@@ -43,7 +43,6 @@ export function CreateRoomScreen() {
     if (peer.isReady && peer.peerId) {
       onInit(peer.peerId);
     } else {
-      setReady(false);
       peer.init(
         onInit,
         (err) => {
@@ -101,7 +100,7 @@ export function CreateRoomScreen() {
       }}
     >
       <div className="menu-bg" />
-      <div className="relative text-center z-[1] mt-3">
+      <div className="relative text-center z-1 mt-3">
         <div className="text-[clamp(1.2rem,4vw,2rem)] font-black"
           style={{
             background: 'linear-gradient(135deg, #00e5ff, #ffffff, #ff3d71)',
@@ -116,7 +115,7 @@ export function CreateRoomScreen() {
         <FieldInput label="Oda Adi" value={roomName} onChange={setRoomName} placeholder="Oda adi..." maxLength={20} />
 
         <div className="flex flex-col gap-1">
-          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-[var(--accent)] opacity-80">
+          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
             Max Oyuncu
           </div>
           <div className="flex gap-2">
@@ -129,7 +128,7 @@ export function CreateRoomScreen() {
         </div>
 
         <div className={`text-[0.78rem] text-center py-1.5 min-h-[20px]
-          ${statusCls === 'ok' ? 'text-[var(--green)]' : statusCls === 'err' ? 'text-[var(--red-team)]' : 'text-[var(--text-dim)]'}`}
+          ${statusCls === 'ok' ? 'text-(--green)' : statusCls === 'err' ? 'text-(--red-team)' : 'text-(--text-dim)'}`}
         >
           {status}
         </div>

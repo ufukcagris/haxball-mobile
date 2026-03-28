@@ -1,5 +1,6 @@
 import { PitchSize } from '@/config/pitchConfigs';
 import { BotDifficulty } from '@/config/botDifficulty';
+import { NormalizedBall, NormalizedPlayer } from '@/multiplayer/types';
 
 export interface BallState {
   x: number;
@@ -71,6 +72,7 @@ export interface GameState {
   paused: boolean;
   over: boolean;
   goalCooldown: number;
+  concededTeam: 'red' | 'blue' | null;
 
   // Timer
   timeLeft: number;
@@ -121,4 +123,15 @@ export interface HUDData {
   timeLeft: number;
   overtime: boolean;
   time: number;
+}
+
+export interface NormalizedState {
+  ball: NormalizedBall;
+  players: NormalizedPlayer[];
+  scoreRed: number;
+  scoreBlue: number;
+  timeLeft: number;
+  overtime: boolean;
+  goalCooldown: number;
+  kickoff: { active: boolean; team: 'red' | 'blue' } | null;
 }

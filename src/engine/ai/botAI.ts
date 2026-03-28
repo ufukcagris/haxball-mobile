@@ -11,7 +11,6 @@ export function updateBot(bot: PlayerState, gs: GameState, difficulty: BotDiffic
 
   const fieldCX = gs.ox + gs.fw * 0.5;
   const fieldCY = gs.oy + gs.fh * 0.5;
-  const myGoalX = gs.ox + gs.fw;       // bot's own goal (right)
   const enemyGoalX = gs.ox;            // opponent goal (left)
   const KICK_RANGE = bot.r + ball.r + 4 * S;
   const dBall = Math.hypot(ball.x - bot.x, ball.y - bot.y);

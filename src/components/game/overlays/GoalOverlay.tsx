@@ -1,7 +1,6 @@
 'use client';
 
 import { useGameStore } from '@/stores/useGameStore';
-import { useAppStore } from '@/stores/useAppStore';
 
 export function GoalOverlay() {
   const { showGoalOverlay, goalTeam } = useGameStore();
@@ -9,8 +8,22 @@ export function GoalOverlay() {
   if (!showGoalOverlay || !goalTeam) return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[90]">
-      <div className="flex flex-col items-center animate-in zoom-in fade-in duration-300">
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-90">
+      <div 
+        className="flex flex-col items-center"
+        style={{ 
+          animation: 'goalFade 3s forwards'
+        }}
+      >
+        <style jsx global>{`
+          @keyframes goalFade {
+            0% { transform: scale(0.5); opacity: 0; }
+            10% { transform: scale(1.1); opacity: 1; }
+            15% { transform: scale(1); opacity: 1; }
+            85% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.2); opacity: 0; }
+          }
+        `}</style>
         <div
           className="text-[clamp(4rem,15vw,8rem)] font-black italic tracking-[-4px]"
           style={{ 

@@ -15,8 +15,8 @@ export function OverlayButton({ onClick, children, variant = 'primary', classNam
 
   const variants = {
     primary: 'bg-gradient-to-br from-[#00e5ff] to-[#0099cc] text-black',
-    secondary: 'bg-[var(--surface2)] text-[var(--text)] border-[1.5px] border-[var(--border)] shadow-none',
-    danger: 'bg-[var(--surface2)] text-[var(--red-team)] border-[1.5px] border-[var(--red-team)] shadow-none',
+    secondary: 'bg-(--surface2) text-(--text) border-[1.5px] border-(--border) shadow-none',
+    danger: 'bg-(--surface2) text-(--red-team) border-[1.5px] border-(--red-team) shadow-none',
   };
 
   return (

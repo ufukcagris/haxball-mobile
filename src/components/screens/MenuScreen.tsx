@@ -54,7 +54,7 @@ export function MenuScreen() {
       <div className="menu-bg" />
 
       {/* Logo */}
-      <div className="relative text-center z-[1] shrink-0">
+      <div className="relative text-center z-1 shrink-0">
         <div
           className="text-[clamp(1.4rem,4vw,2.8rem)] font-black tracking-tight leading-none"
           style={{
@@ -67,7 +67,7 @@ export function MenuScreen() {
         >
           HaxMobile
         </div>
-        <div className="font-['Share_Tech_Mono',monospace] text-[clamp(0.55rem,1.8vw,0.8rem)] text-[var(--accent)] tracking-[5px] uppercase opacity-70 mt-0.5">
+        <div className="font-['Share_Tech_Mono',monospace] text-[clamp(0.55rem,1.8vw,0.8rem)] text-(--accent) tracking-[5px] uppercase opacity-70 mt-0.5">
           ⚽ Street Football
         </div>
       </div>
@@ -84,7 +84,7 @@ export function MenuScreen() {
 
         {/* Pitch Size */}
         <div className="flex flex-col gap-1">
-          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-[var(--accent)] opacity-80">
+          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
             Saha Boyutu
           </div>
           <div className="grid grid-cols-3 gap-[7px]">
@@ -92,18 +92,18 @@ export function MenuScreen() {
               <button
                 key={p.value}
                 onClick={() => setConfig({ pitch: p.value })}
-                className={`bg-[var(--surface2)] border-2 rounded-[10px] cursor-pointer
+                className={`bg-(--surface2) border-2 rounded-[10px] cursor-pointer
                   py-[clamp(5px,1vh,9px)] px-1 flex flex-col items-center gap-0.5
                   transition-all duration-200
                   ${config.pitch === p.value
-                    ? 'border-[var(--accent)] bg-[rgba(0,229,255,0.1)] shadow-[0_0_14px_rgba(0,229,255,0.2)]'
-                    : 'border-[var(--border)]'
+                    ? 'border-(--accent) bg-[rgba(0,229,255,0.1)] shadow-[0_0_14px_rgba(0,229,255,0.2)]'
+                    : 'border-(--border)'
                   }`}
                 style={{ touchAction: 'manipulation' }}
               >
                 <span className="text-[1.1rem]">{p.icon}</span>
                 <span className={`text-[0.6rem] font-bold tracking-[1px] uppercase
-                  ${config.pitch === p.value ? 'text-[var(--accent)]' : 'text-[var(--text-dim)]'}`}
+                  ${config.pitch === p.value ? 'text-(--accent)' : 'text-(--text-dim)'}`}
                 >
                   {p.label}
                 </span>
@@ -114,7 +114,7 @@ export function MenuScreen() {
 
         {/* Match Time */}
         <div className="flex flex-col gap-1">
-          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-[var(--accent)] opacity-80">
+          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
             Mac Suresi
           </div>
           <div className="flex gap-1.5">
@@ -133,7 +133,7 @@ export function MenuScreen() {
 
         {/* Difficulty */}
         <div className="flex flex-col gap-1">
-          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-[var(--accent)] opacity-80">
+          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
             Rakip
           </div>
           <div className="flex gap-[5px] flex-nowrap">

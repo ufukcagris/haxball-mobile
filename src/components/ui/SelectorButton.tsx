@@ -10,32 +10,32 @@ interface SelectorButtonProps {
 
 const colorMap = {
   accent: {
-    border: 'border-[var(--accent)]',
-    bg: 'bg-[rgba(0,229,255,0.1)]',
-    text: 'text-[var(--accent)]',
+  border: 'border-(--accent)',
+  bg: 'bg-(--accent)/10',
+  text: 'text-(--accent)',
   },
   yellow: {
-    border: 'border-[var(--yellow)]',
-    bg: 'bg-[rgba(255,214,0,0.1)]',
-    text: 'text-[var(--yellow)]',
+  border: 'border-(--yellow)',
+  bg: 'bg-(--yellow)/10',
+  text: 'text-(--yellow)',
   },
   green: {
-    border: 'border-[var(--green)]',
-    bg: 'bg-[rgba(0,255,136,0.1)]',
-    text: 'text-[var(--green)]',
+  border: 'border-(--green)',
+  bg: 'bg-(--green)/10',
+  text: 'text-(--green)',
   },
-};
+  };
 
-export function SelectorButton({ active, onClick, children, color = 'accent', className = '' }: SelectorButtonProps) {
+  export function SelectorButton({ active, onClick, children, color = 'accent', className = '' }: SelectorButtonProps) {
   const c = colorMap[color];
   return (
-    <button
-      onClick={onClick}
-      className={`flex-1 bg-[var(--surface2)] border-2 rounded-[9px]
-        text-[var(--text-dim)] cursor-pointer font-['Exo_2',sans-serif] text-[0.8rem] font-bold
-        py-[clamp(5px,1vh,8px)] px-0.5 text-center transition-all duration-200
-        ${active ? `${c.border} ${c.bg} ${c.text}` : 'border-[var(--border)]'}
-        ${className}`}
+  <button
+    onClick={onClick}
+    className={`flex-1 bg-(--surface2) border-2 rounded-[9px]
+      text-(--text-dim) cursor-pointer font-['Exo_2',sans-serif] text-[0.8rem] font-bold
+      py-[clamp(5px,1vh,8px)] px-0.5 text-center transition-all duration-200
+      ${active ? `${c.border} ${c.bg} ${c.text}` : 'border-(--border)'}
+      ${className}`}
       style={{ touchAction: 'manipulation' }}
     >
       {children}

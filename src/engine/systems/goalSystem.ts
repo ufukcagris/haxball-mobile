@@ -6,7 +6,7 @@ export type GoalResult = {
 } | null;
 
 export function checkGoal(gs: GameState): GoalResult {
-  const { ox, oy, fw, fh, gw, gd, ball } = gs;
+  const { ox, oy, fw, fh, gw, ball } = gs;
   const midY = oy + fh / 2;
   const halfG = gw / 2;
   const br = ball.r;

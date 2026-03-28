@@ -1,4 +1,4 @@
-import { GameState, Particle } from '../types';
+import { GameState } from '../types';
 import { createParticle } from '../entities/createParticle';
 
 export function spawnParticles(

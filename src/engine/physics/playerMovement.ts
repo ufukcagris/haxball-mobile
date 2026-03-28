@@ -17,12 +17,10 @@ export function applyPlayerMovement(
 
   // moveDuration: accumulates while dribbling ball fast in straight line
   const ball = gs.ball;
+  const ballSpd = Math.hypot(ball.vx, ball.vy);
   const dribbleDist = Math.hypot(ball.x - player.x, ball.y - player.y);
   const isDribbling = dribbleDist < player.r + ball.r + 18 * gs.scale;
 
-  const ballSpd = Math.hypot(ball.vx, ball.vy);
-  const playerSpd = Math.hypot(player.vx, player.vy);
-  
   // Power shot condition: dribbling + BALL must be moving at high speed
   // Using 75% of max speed as a more balanced threshold
   const isBallFastEnough = ballSpd > (MAX_PLAYER_SPEED * gs.scale) * 0.75;

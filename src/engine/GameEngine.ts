@@ -6,8 +6,8 @@ import {
   FIXED_STEP, MAX_SCALE, MAX_PLAYER_SPEED, ACCEL_FACTOR, DECEL_FACTOR, 
   JOYSTICK_DEAD, EXT_FRICTION
 } from '@/config/constants';
-import { GameState, PlayerState, MultiPlayerInfo } from './types';
-import { LobbySettings } from '@/multiplayer/types';
+import { GameState, PlayerState, MultiPlayerInfo, HUDData, GameConfig, InputState, NormalizedState } from './types';
+import { LobbySettings, NormalizedPlayer } from '@/multiplayer/types';
 import { createPlayer } from './entities/createPlayer';
 import { createBall } from './entities/createBall';
 import { updateBall } from './physics/ballPhysics';
@@ -22,13 +22,14 @@ import { resetPositions } from './systems/kickoffSystem';
 import { applyPlayerMovement } from './physics/playerMovement';
 import { doKick } from './systems/kickSystem';
 import { updateBot } from './ai/botAI';
-import { BotDifficulty } from '@/config/botDifficulty';
 import { render } from './renderer/GameRenderer';
+import { KeyboardInput } from './input/KeyboardInput';
+import { TouchInput } from './input/TouchInput';
 
 export class GameEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private config: { pitch: 'small'|'medium'|'large', time: number, diff: BotDifficulty, nick: string };
+  private config: GameConfig;
   private gameState: GameState | null = null;
   private animId: number | null = null;
   private lastTime = 0;
@@ -38,22 +39,20 @@ export class GameEngine {
   private isHost = false;
   private remoteInputs: Record<string, { dx: number, dy: number, kickHeld: boolean }> = {};
 
-  public onHUDUpdate: ((data: any) => void) | null = null;
+  public onHUDUpdate: ((data: HUDData) => void) | null = null;
   public onGoal: ((team: 'red' | 'blue') => void) | null = null;
   public onEnd: (() => void) | null = null;
-  public onSendGameState: ((state: any) => void) | null = null;
-  public onSendInput: ((input: any) => void) | null = null;
+  public onSendGameState: ((state: GameState) => void) | null = null;
+  public onSendInput: ((input: InputState) => void) | null = null;
 
-  public keyboardInput: any;
-  public touchInput: any;
+  public keyboardInput: KeyboardInput;
+  public touchInput: TouchInput;
 
-  constructor(canvas: HTMLCanvasElement, config: any) {
+  constructor(canvas: HTMLCanvasElement, config: GameConfig) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.config = config;
 
-    const { KeyboardInput } = require('./input/KeyboardInput');
-    const { TouchInput } = require('./input/TouchInput');
     this.keyboardInput = new KeyboardInput();
     this.touchInput = new TouchInput();
   }
@@ -66,11 +65,17 @@ export class GameEngine {
 
   resize(): void {
     if (this.gameState) {
+      const gs = this.gameState;
       const pc = PITCH_CONFIGS[this.config.pitch as PitchSize];
       const W = this.canvas.width;
       const H = this.canvas.height;
+      const oldScale = gs.scale;
+      const oldOx = gs.ox;
+      const oldOy = gs.oy;
+
       const newScale = Math.min((W - 20) / pc.fw, (H - 20) / pc.fh, MAX_SCALE);
-      const gs = this.gameState;
+      
+      // Update dimensions
       gs.scale = newScale;
       gs.fw = pc.fw * newScale;
       gs.fh = pc.fh * newScale;
@@ -81,6 +86,21 @@ export class GameEngine {
       gs.gw = pc.goalW * newScale;
       gs.gd = pc.goalDepth * newScale;
       gs.wt = pc.wallT * newScale;
+
+      // Adjust positions of ball and players to stay relative to the field
+      const scaleRatio = newScale / oldScale;
+
+      // Ball adjustment
+      gs.ball.x = gs.ox + (gs.ball.x - oldOx) * scaleRatio;
+      gs.ball.y = gs.oy + (gs.ball.y - oldOy) * scaleRatio;
+      gs.ball.r = gs.br;
+
+      // Players adjustment
+      gs.players.forEach((p: PlayerState) => {
+        p.x = gs.ox + (p.x - oldOx) * scaleRatio;
+        p.y = gs.oy + (p.y - oldOy) * scaleRatio;
+        p.r = gs.pr;
+      });
     }
   }
 
@@ -111,7 +131,8 @@ export class GameEngine {
       timeLeft: this.config.time, timerRunning: this.config.time > 0,
       overtime: false,
       scoreRed: 0, scoreBlue: 0,
-      goalLimit: (this.config as any).goals || 0,
+      goalLimit: this.config.goalLimit || 0,
+      concededTeam: null,
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
       players,
@@ -156,13 +177,14 @@ export class GameEngine {
       overtime: false,
       scoreRed: 0, scoreBlue: 0,
       goalLimit: settings.goals || 0,
+      concededTeam: null,
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
       players: gsPlayers,
       input: { dx: 0, dy: 0, kick: false, kickCharge: 0, kickHeld: false },
       kickCharging: false,
       prevInputDir: null,
-      kickoff: null,
+      kickoff: { active: true, team: 'red' },
       isMulti: true,
     };
 
@@ -278,7 +300,7 @@ export class GameEngine {
     this.remoteInputs[peerId] = input;
   }
 
-  applyRemoteState(msg: any): void {
+  applyRemoteState(msg: NormalizedState): void {
     const gs = this.gameState;
     if (!gs) return;
 
@@ -292,7 +314,7 @@ export class GameEngine {
     gs.ball.vx = denormVx(msg.ball.nvx);
     gs.ball.vy = denormVy(msg.ball.nvy);
 
-    msg.players.forEach((rp: any) => {
+    msg.players.forEach((rp: NormalizedPlayer) => {
       const local = gs.players.find((p: PlayerState) => p.peerId === rp.peerId);
       if (!local) return;
       local.x = denormX(rp.nx);
@@ -306,10 +328,12 @@ export class GameEngine {
     gs.scoreBlue = msg.scoreBlue;
     gs.timeLeft = msg.timeLeft;
     gs.overtime = msg.overtime || false;
+    gs.goalCooldown = msg.goalCooldown; // Sync cooldown
+    gs.kickoff = msg.kickoff; // Sync kickoff state
     this.emitHUD();
   }
 
-  getNormalizedState(): any {
+  getNormalizedState(): NormalizedState | null {
     const gs = this.gameState;
     if (!gs) return null;
 
@@ -330,6 +354,8 @@ export class GameEngine {
       })),
       scoreRed: gs.scoreRed, scoreBlue: gs.scoreBlue,
       timeLeft: gs.timeLeft, overtime: gs.overtime,
+      goalCooldown: gs.goalCooldown, // Send cooldown
+      kickoff: gs.kickoff, // Send kickoff state
     };
   }
 
@@ -359,21 +385,35 @@ export class GameEngine {
     this.keyboardInput.hasActiveTouch = this.touchInput.isActive;
     this.keyboardInput.applyKeyboard();
 
-    if (gs.goalCooldown > 0) {
-      gs.goalCooldown--;
-      if (gs.goalCooldown === 0 && !gs.over) {
-        const conceded = gs.ball.x < gs.ox + gs.fw / 2 ? 'red' : 'blue';
-        resetPositions(gs, conceded);
-      }
-    } else {
-      if (updateTimer(gs)) {
-        if (checkOvertime(gs)) {
-          this.emitHUD();
+    // ONLY HOST (or Solo) handles game logic like Timer, Goals and Resets
+    const isMaster = !gs.isMulti || this.isHost;
+
+    if (isMaster) {
+      if (gs.goalCooldown > 0) {
+        gs.goalCooldown--;
+        if (gs.goalCooldown === 0 && !gs.over) {
+          // HOST performs the reset using the stored conceding team info
+          // We NEVER guess based on ball position anymore.
+          const teamToKickoff = gs.concededTeam || 'red';
+          resetPositions(gs, teamToKickoff);
+          gs.concededTeam = null;
+          
+          // Immediate sync after reset
+          this.networkSync();
+        }
+      } else {
+        if (updateTimer(gs)) {
+          if (checkOvertime(gs)) {
+            this.emitHUD();
+            return;
+          }
+          this.endGame();
           return;
         }
-        this.endGame();
-        return;
       }
+    } else {
+      // Guest: Do not decrement or handle cooldown/timer locally.
+      // Simply wait for Host's applyRemoteState which includes the reset positions and new kickoff state.
     }
 
     const localPlayer = this.getLocalPlayer();
@@ -387,7 +427,7 @@ export class GameEngine {
       this.moveAllPlayers();
       this.processBallAndCollisions();
       this.networkSync();
-      if (gs.goalCooldown === 0) this.checkGoalScored();
+      if (gs.goalCooldown === 0 && isMaster) this.checkGoalScored();
       return;
     }
 
@@ -403,7 +443,7 @@ export class GameEngine {
     this.moveAllPlayers();
     this.processBallAndCollisions();
     this.networkSync();
-    if (gs.goalCooldown === 0) this.checkGoalScored();
+    if (gs.goalCooldown === 0 && isMaster) this.checkGoalScored();
     this.emitHUD();
   }
 
@@ -496,7 +536,7 @@ export class GameEngine {
       setTimeout(() => this.endGame(), 2400);
     } else {
       this.onGoal?.(scored);
-      gs.goalCooldown = 300;
+      gs.goalCooldown = 180; // ~3 seconds at 60fps
     }
   }
 

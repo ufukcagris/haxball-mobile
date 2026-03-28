@@ -1,4 +1,4 @@
-import { GameState, PlayerState } from '../types';
+import { GameState } from '../types';
 import { POWER_SHOT_START } from '@/config/constants';
 
 export function renderPlayers(ctx: CanvasRenderingContext2D, gs: GameState): void {

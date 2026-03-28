@@ -14,9 +14,7 @@ export function renderPitch(ctx: CanvasRenderingContext2D, gs: GameState): void 
 
   // Physical Arena Boundaries (Where the walls are)
   const outerXMin = ox - gd;
-  const outerXMax = ox + fw + gd;
   const outerYMin = oy - gd;
-  const outerYMax = oy + fh + gd;
   const arenaW = fw + gd * 2;
   const arenaH = fh + gd * 2;
 

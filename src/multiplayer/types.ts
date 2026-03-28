@@ -33,9 +33,11 @@ export type NetworkMessage =
   | { type: 'join'; nick: string }
   | { type: 'input'; dx: number; dy: number; kickHeld: boolean }
   | { type: 'game_start'; players: MultiPlayerNetInfo[]; settings: LobbySettings }
-  | { type: 'game_state'; ball: NormalizedBall; players: NormalizedPlayer[]; scoreRed: number; scoreBlue: number; timeLeft: number; overtime: boolean }
+  | { type: 'game_state'; ball: NormalizedBall; players: NormalizedPlayer[]; scoreRed: number; scoreBlue: number; timeLeft: number; overtime: boolean; goalCooldown: number; kickoff: { active: boolean; team: 'red' | 'blue' } | null }
   | { type: 'goal'; team: 'red' | 'blue' }
   | { type: 'game_end'; scoreRed: number; scoreBlue: number }
+  | { type: 'error'; message: string }
+  | { type: 'chat'; nick: string; message: string }
   | { type: 'lobby_return'; state: LobbyState };
 
 export interface MultiPlayerNetInfo {

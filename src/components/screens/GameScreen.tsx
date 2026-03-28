@@ -2,7 +2,7 @@
 
 import { getSharedHost } from '@/components/screens/CreateRoomScreen';
 import { getSharedGuest } from '@/components/screens/JoinRoomScreen';
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useGameStore } from '@/stores/useGameStore';
 import { useLobbyStore } from '@/stores/useLobbyStore';
@@ -14,7 +14,6 @@ import { GoalOverlay } from '@/components/game/overlays/GoalOverlay';
 import { EndOverlay } from '@/components/game/overlays/EndOverlay';
 import { HUD_HEIGHT } from '@/config/constants';
 import { LobbyScreen } from './LobbyScreen';
-import { OverlayButton } from '../ui/OverlayButton';
 
 export function GameScreen() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -67,7 +66,7 @@ export function GameScreen() {
       }
       setTimeout(() => {
         useGameStore.getState().clearGoal();
-      }, 4000);
+      }, 3000);
     };
     engine.onEnd = () => {
       useGameStore.getState().setEnd();
@@ -204,22 +203,6 @@ export function GameScreen() {
     setScreen('menu');
   };
 
-  const restartGame = () => {
-    useGameStore.getState().reset();
-    if (myRole !== 'solo') {
-      goMenu();
-    } else {
-      engineRef.current?.stop();
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = Math.max(window.innerHeight - HUD_HEIGHT, 100);
-      }
-      engineRef.current?.initSoloGame();
-      engineRef.current?.start();
-    }
-  };
-
   return (
     <div className="bg-black flex flex-col overflow-hidden w-full h-full" style={{ touchAction: 'none' }}>
       <HUD />
@@ -234,14 +217,14 @@ export function GameScreen() {
       <JoystickZone zoneRef={zoneRef} jBaseRef={jBaseRef} jKnobRef={jKnobRef} />
 
       <div
-        className="absolute bottom-0 right-0 pointer-events-none z-[31]"
+        className="absolute bottom-0 right-0 pointer-events-none z-31"
         style={{
           top: `${HUD_HEIGHT}px`,
           width: '33.33%',
           borderLeft: '1px solid rgba(255,200,0,0.12)',
         }}
       >
-        <span className="absolute bottom-7 left-1/2 -translate-x-1/2 text-[1.2rem] opacity-[0.18]">⚡</span>
+        <span className="absolute bottom-7 left-1/2 -translate-x-1/2 text-[1.2rem] opacity-18">⚡</span>
       </div>
 
       {!showFullLobby && (
@@ -253,7 +236,7 @@ export function GameScreen() {
       )}
 
       {showFullLobby && paused && (
-        <div className="absolute inset-0 z-[110] bg-[#0a0e1a] flex flex-col">
+        <div className="absolute inset-0 z-110 bg-[#0a0e1a] flex flex-col">
           <LobbyScreen 
             isOverlay 
             onBackToGame={() => setShowFullLobby(false)} 
@@ -263,7 +246,7 @@ export function GameScreen() {
       )}
 
       <GoalOverlay />
-      <EndOverlay onRestart={restartGame} onMenu={goMenu} />
+      <EndOverlay />
     </div>
   );
 }

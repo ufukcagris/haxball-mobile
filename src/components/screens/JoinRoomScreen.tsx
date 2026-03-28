@@ -94,7 +94,7 @@ export function JoinRoomScreen() {
       }}
     >
       <div className="menu-bg" />
-      <div className="relative text-center z-[1] mt-3">
+      <div className="relative text-center z-1 mt-3">
         <div className="text-[clamp(1.2rem,4vw,2rem)] font-black"
           style={{
             background: 'linear-gradient(135deg, #00e5ff, #ffffff, #ff3d71)',
@@ -109,7 +109,7 @@ export function JoinRoomScreen() {
         <FieldInput label="Oda Kodu" value={code} onChange={setCode} placeholder="Oda kodunu gir..." maxLength={50} mono />
 
         <div className={`text-[0.78rem] text-center py-1.5 min-h-[20px]
-          ${statusCls === 'ok' ? 'text-[var(--green)]' : statusCls === 'err' ? 'text-[var(--red-team)]' : 'text-[var(--text-dim)]'}`}
+          ${statusCls === 'ok' ? 'text-(--green)' : statusCls === 'err' ? 'text-(--red-team)' : 'text-(--text-dim)'}`}
         >
           {status}
         </div>
