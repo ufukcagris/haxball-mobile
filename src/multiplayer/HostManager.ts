@@ -128,9 +128,10 @@ export class HostManager {
           }
 
           if (msg.type === 'chat') {
-            console.log(`[HostManager] Chat from ${pid}: ${msg.message}`);
-            this.onChatMessage?.(msg.nick, msg.message);
-            this.broadcastChat(msg.nick, msg.message);
+            const authoritativeNick = this.playerNicks[pid] || msg.nick;
+            console.log(`[HostManager] Chat from ${pid} (${authoritativeNick}): ${msg.message}`);
+            this.onChatMessage?.(authoritativeNick, msg.message);
+            this.broadcastChat(authoritativeNick, msg.message);
           }
 
           if (msg.type === 'input') {
