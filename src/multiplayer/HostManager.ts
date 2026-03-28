@@ -53,13 +53,17 @@ export class HostManager {
         this.connections[pid] = conn;
 
         const handleJoin = () => {
-          if (this.playerNicks[pid]) return; // Already joined
+          // STRICT CHECK: Don't process join twice for the same connection
+          if (this.playerNicks[pid]) {
+            console.log('[HostManager] Ignoring duplicate join for:', pid);
+            return;
+          }
 
           console.log('[HostManager] Connection OPEN with:', pid);
           const metadata = conn.metadata as { nick?: string } | undefined;
           let nick = (metadata?.nick || 'Oyuncu').trim();
 
-          // Ensure unique nick
+          // Ensure unique nick - only check existing players
           const currentLs = useLobbyStore.getState().lobbyState;
           const allNicks = [
             ...currentLs.red.map((p: LobbyPlayer) => p.nick),
@@ -119,15 +123,12 @@ export class HostManager {
 
         conn.on('data', (d) => {
           const msg = d as NetworkMessage;
-          console.log(`[HostManager] Received message from ${pid}:`, msg.type);
-
-          if (msg.type === 'join') {
-            handleJoin();
-          }
+          
+          // We no longer handle 'join' here to prevent duplicates.
+          // Everything is handled by handleJoin triggered via connection/open events.
 
           if (msg.type === 'chat') {
             const authoritativeNick = this.playerNicks[pid] || msg.nick;
-            console.log(`[HostManager] Chat from ${pid} (${authoritativeNick}): ${msg.message}`);
             this.onChatMessage?.(authoritativeNick, msg.message);
             this.broadcastChat(authoritativeNick, msg.message);
           }
