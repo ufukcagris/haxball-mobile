@@ -38,12 +38,25 @@ export function LobbyScreen({
   const [chatInput, setChatInput] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
+  const colors = [
+    '#00e5ff', '#ff3d71', '#00ff88', '#ffd600', '#ff8800', 
+    '#ff00ff', '#ffffff', '#4ade80', '#60a5fa', '#f87171'
+  ];
+
+  const getNickColor = (nick: string) => {
+    let hash = 0;
+    for (let i = 0; i < nick.length; i++) {
+      hash = nick.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   const ls = lobbyState;
   const isHost = myRole === 'host';
   const total = ls.red.length + ls.blue.length + ls.spec.length;
 
   const addLocalChat = useCallback((nick: string, message: string) => {
-    setChatMessages(prev => [...prev.slice(-49), { nick, message, id: Date.now() + Math.random() }]);
+    setChatMessages(prev => [...prev.slice(-19), { nick, message, id: Date.now() + Math.random() }]);
   }, []);
 
   // Auto-scroll chat
@@ -349,7 +362,7 @@ export function LobbyScreen({
             )}
             {chatMessages.map(m => (
               <div key={m.id} className='text-[0.75rem] leading-tight break-all'>
-                <span className='font-black text-(--accent) mr-1.5 uppercase'>[{m.nick}]:</span>
+                <span className='font-black mr-1.5 uppercase' style={{ color: getNickColor(m.nick) }}>[{m.nick}]:</span>
                 <span className='text-white/90'>{m.message}</span>
               </div>
             ))}

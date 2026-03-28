@@ -12,21 +12,31 @@ export function ScreenManager() {
 
   return (
     <div className="w-full h-full relative">
-      <div className={`screen ${screen !== 'menu' ? 'hidden' : ''}`}>
-        <MenuScreen />
-      </div>
-      <div className={`screen ${screen !== 'create' ? 'hidden' : ''}`}>
-        <CreateRoomScreen />
-      </div>
-      <div className={`screen ${screen !== 'join' ? 'hidden' : ''}`}>
-        <JoinRoomScreen />
-      </div>
-      <div className={`screen ${screen !== 'lobby' ? 'hidden' : ''}`}>
-        <LobbyScreen />
-      </div>
-      <div className={`screen ${screen !== 'game' ? 'hidden' : ''}`}>
-        <GameScreen />
-      </div>
+      {screen === 'menu' && (
+        <div className="screen">
+          <MenuScreen />
+        </div>
+      )}
+      {screen === 'create' && (
+        <div className="screen">
+          <CreateRoomScreen />
+        </div>
+      )}
+      {screen === 'join' && (
+        <div className="screen">
+          <JoinRoomScreen />
+        </div>
+      )}
+      {screen === 'lobby' && (
+        <div className="screen">
+          <LobbyScreen />
+        </div>
+      )}
+      {screen === 'game' && (
+        <div className="screen">
+          <GameScreen />
+        </div>
+      )}
     </div>
   );
 }
