@@ -23,10 +23,16 @@ export class HostManager {
         const pid = conn.peer;
         this.connections[pid] = conn;
 
-        conn.on('open', () => {
+        const handleJoin = () => {
           const nick = (conn.metadata as any)?.nick || 'Oyuncu';
           this.onPlayerJoined?.(pid, nick);
-        });
+        };
+
+        if (conn.open) {
+          handleJoin();
+        } else {
+          conn.on('open', handleJoin);
+        }
 
         conn.on('data', (d) => {
           const msg = d as NetworkMessage;
