@@ -1,0 +1,100 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAppStore } from '@/stores/useAppStore';
+import { useLobbyStore } from '@/stores/useLobbyStore';
+import { MenuCard } from '@/components/ui/MenuCard';
+import { FieldInput } from '@/components/ui/FieldInput';
+import { PlayButton } from '@/components/ui/PlayButton';
+import { getSharedPeer } from './CreateRoomScreen';
+import { GuestManager } from '@/multiplayer/GuestManager';
+
+let sharedGuest: GuestManager | null = null;
+export function getSharedGuest(): GuestManager | null { return sharedGuest; }
+
+export function JoinRoomScreen() {
+  const { config, setScreen } = useAppStore();
+  const { setLobbyState, setMyRole, setMyPeerId } = useLobbyStore();
+  const [code, setCode] = useState('');
+  const [status, setStatus] = useState('');
+  const [statusCls, setStatusCls] = useState('');
+
+  useEffect(() => {
+    const peer = getSharedPeer();
+    if (!peer.isReady) {
+      peer.init(
+        (id) => setMyPeerId(id),
+        (err) => { setStatus('❌ Baglanti hatasi: ' + err); setStatusCls('err'); }
+      );
+    }
+  }, [setMyPeerId]);
+
+  const joinRoom = () => {
+    if (!code.trim()) {
+      setStatus('Kod gir!');
+      setStatusCls('err');
+      return;
+    }
+    setStatus('🔗 Baglaniyor...');
+    setStatusCls('');
+    setMyRole('guest');
+
+    const peer = getSharedPeer();
+    sharedGuest = new GuestManager(peer);
+
+    sharedGuest.onLobbyUpdate = (state) => {
+      setLobbyState(state);
+      setScreen('lobby');
+    };
+    sharedGuest.onDisconnect = () => {
+      alert('Baglanti kesildi');
+      setScreen('menu');
+    };
+    sharedGuest.onError = (err) => {
+      setStatus('❌ ' + err);
+      setStatusCls('err');
+    };
+
+    sharedGuest.connect(code.trim(), config.nick);
+  };
+
+  return (
+    <div
+      className="flex flex-col items-center justify-start overflow-y-auto p-4 gap-3 w-full h-full"
+      style={{
+        background: 'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
+      }}
+    >
+      <div className="menu-bg" />
+      <div className="relative text-center z-[1] mt-3">
+        <div className="text-[clamp(1.2rem,4vw,2rem)] font-black"
+          style={{
+            background: 'linear-gradient(135deg, #00e5ff, #ffffff, #ff3d71)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          }}
+        >
+          Odaya Katil
+        </div>
+      </div>
+
+      <MenuCard className="w-[min(460px,96vw)]">
+        <FieldInput label="Oda Kodu" value={code} onChange={setCode} placeholder="Oda kodunu gir..." maxLength={50} mono />
+
+        <div className={`text-[0.78rem] text-center py-1.5 min-h-[20px]
+          ${statusCls === 'ok' ? 'text-[var(--green)]' : statusCls === 'err' ? 'text-[var(--red-team)]' : 'text-[var(--text-dim)]'}`}
+        >
+          {status}
+        </div>
+
+        <PlayButton onClick={joinRoom}>
+          🚀 KATIL
+        </PlayButton>
+        <PlayButton onClick={() => setScreen('menu')} variant="secondary">
+          ← Geri
+        </PlayButton>
+      </MenuCard>
+    </div>
+  );
+}

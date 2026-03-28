@@ -1,0 +1,71 @@
+import { DataConnection } from 'peerjs';
+import { PeerManager } from './PeerManager';
+import type { NetworkMessage, LobbyState, LobbySettings } from './types';
+
+export class GuestManager {
+  private peerManager: PeerManager;
+  private hostConn: DataConnection | null = null;
+
+  public onLobbyUpdate: ((state: LobbyState) => void) | null = null;
+  public onGameStart: ((players: Array<{ id: string; nick: string; team: 'red' | 'blue'; idx: number; total: number }>, settings: LobbySettings) => void) | null = null;
+  public onGameState: ((msg: any) => void) | null = null;
+  public onGoal: ((team: 'red' | 'blue') => void) | null = null;
+  public onGameEnd: ((scoreRed: number, scoreBlue: number) => void) | null = null;
+  public onLobbyReturn: ((state: LobbyState) => void) | null = null;
+  public onDisconnect: (() => void) | null = null;
+  public onError: ((err: string) => void) | null = null;
+
+  constructor(peerManager: PeerManager) {
+    this.peerManager = peerManager;
+  }
+
+  connect(code: string, nick: string): void {
+    const conn = this.peerManager.connect(code, { nick });
+    if (!conn) return;
+
+    this.hostConn = conn;
+
+    conn.on('open', () => {
+      conn.send({ type: 'join', nick });
+    });
+
+    conn.on('data', (d) => {
+      const msg = d as NetworkMessage;
+      switch (msg.type) {
+        case 'lobby':
+          this.onLobbyUpdate?.(msg.state);
+          break;
+        case 'game_start':
+          this.onGameStart?.(msg.players, msg.settings);
+          break;
+        case 'game_state':
+          this.onGameState?.(msg);
+          break;
+        case 'goal':
+          this.onGoal?.(msg.team);
+          break;
+        case 'game_end':
+          this.onGameEnd?.(msg.scoreRed, msg.scoreBlue);
+          break;
+        case 'lobby_return':
+          this.onLobbyReturn?.(msg.state);
+          break;
+      }
+    });
+
+    conn.on('close', () => this.onDisconnect?.());
+    conn.on('error', (e) => this.onError?.(e.type));
+  }
+
+  sendInput(dx: number, dy: number, kickHeld: boolean): void {
+    if (!this.hostConn) return;
+    try {
+      this.hostConn.send({ type: 'input', dx, dy, kickHeld });
+    } catch (e) { /* ignore */ }
+  }
+
+  disconnect(): void {
+    try { this.hostConn?.close(); } catch (e) { /* ignore */ }
+    this.hostConn = null;
+  }
+}
