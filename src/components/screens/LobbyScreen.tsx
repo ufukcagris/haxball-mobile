@@ -190,7 +190,6 @@ export function LobbyScreen({
       getSharedGuest()?.sendChat(currentNick, msg);
     }
     setChatInput('');
-    setTypingStatus(false); // Clear bubble on send
   };
 
   const onChatKeyDown = (e: React.KeyboardEvent) => {

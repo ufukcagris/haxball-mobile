@@ -104,8 +104,8 @@ export function renderPlayers(ctx: CanvasRenderingContext2D, gs: GameState): voi
       const by = p.y - p.r - bh - 8;
 
       // Bubble BG
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
       ctx.lineWidth = 1;
       
       ctx.beginPath();
@@ -128,7 +128,7 @@ export function renderPlayers(ctx: CanvasRenderingContext2D, gs: GameState): voi
       ctx.fill();
 
       // Typing dots "..."
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = '#000';
       ctx.font = `bold ${Math.max(10, p.r * 0.8)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
