@@ -12,6 +12,7 @@ interface GameStoreState {
   showGoalOverlay: boolean;
   showEndOverlay: boolean;
   showPauseOverlay: boolean;
+  showFullLobby: boolean;
   redNick: string;
   blueNick: string;
 
@@ -20,6 +21,7 @@ interface GameStoreState {
   clearGoal: () => void;
   setEnd: () => void;
   setPaused: (paused: boolean) => void;
+  setShowFullLobby: (show: boolean) => void;
   setNicks: (red: string, blue: string) => void;
   reset: () => void;
 }
@@ -36,6 +38,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   showGoalOverlay: false,
   showEndOverlay: false,
   showPauseOverlay: false,
+  showFullLobby: false,
   redNick: 'KIRMIZI',
   blueNick: 'MAVİ',
 
@@ -50,10 +53,13 @@ export const useGameStore = create<GameStoreState>((set) => ({
   clearGoal: () => set({ goalTeam: null, showGoalOverlay: false }),
   setEnd: () => set({ over: true, showEndOverlay: true }),
   setPaused: (paused) => set({ paused, showPauseOverlay: paused }),
+  setShowFullLobby: (show) => set({ showFullLobby: show }),
   setNicks: (red, blue) => set({ redNick: red, blueNick: blue }),
-  reset: () => set({
+  reset: () => set((s) => ({
     scoreRed: 0, scoreBlue: 0, timeLeft: 0, overtime: false,
     paused: false, over: false, goalTeam: null,
     showGoalOverlay: false, showEndOverlay: false, showPauseOverlay: false,
-  }),
+    // Keep showFullLobby as is during reset, or handle explicitly
+    showFullLobby: s.showFullLobby,
+  })),
 }));

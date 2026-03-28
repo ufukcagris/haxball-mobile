@@ -1,13 +1,19 @@
 import { PlayerState, GameState } from '../types';
 
 export function clampPlayerToField(player: PlayerState, gs: GameState): void {
-  const { ox, oy, fw, fh } = gs;
-  const OUT = player.r;
+  const { ox, oy, fw, fh, gd } = gs;
+  
+  // Outer boundary (physical walls of the arena)
+  // We allow players to go 'gd' (goal depth) distance behind the lines everywhere
+  const outerXMin = ox - gd;
+  const outerXMax = ox + fw + gd;
+  const outerYMin = oy - gd;
+  const outerYMax = oy + fh + gd;
 
-  if (player.x - player.r < ox - OUT) { player.x = ox - OUT + player.r; player.vx *= -0.4; }
-  if (player.x + player.r > ox + fw + OUT) { player.x = ox + fw + OUT - player.r; player.vx *= -0.4; }
-  if (player.y - player.r < oy - OUT) { player.y = oy - OUT + player.r; player.vy *= -0.4; }
-  if (player.y + player.r > oy + fh + OUT) { player.y = oy + fh + OUT - player.r; player.vy *= -0.4; }
+  if (player.x - player.r < outerXMin) { player.x = outerXMin + player.r; player.vx *= -0.4; }
+  if (player.x + player.r > outerXMax) { player.x = outerXMax - player.r; player.vx *= -0.4; }
+  if (player.y - player.r < outerYMin) { player.y = outerYMin + player.r; player.vy *= -0.4; }
+  if (player.y + player.r > outerYMax) { player.y = outerYMax - player.r; player.vy *= -0.4; }
 }
 
 export function applyKickoffBarrier(player: PlayerState, gs: GameState): void {

@@ -10,7 +10,13 @@ import { useState, useCallback, useEffect } from 'react';
 import { Toast } from '@/components/ui/Toast';
 import { tryAutoFullscreen } from '@/utils/fullscreen';
 
-export function LobbyScreen() {
+interface LobbyScreenProps {
+  isOverlay?: boolean;
+  onBackToGame?: () => void;
+  onEndMatch?: () => void;
+}
+
+export function LobbyScreen({ isOverlay = false, onBackToGame, onEndMatch }: LobbyScreenProps) {
   const { setScreen } = useAppStore();
   const {
     lobbyState, myRole, myPeerId, selectedChipId,
@@ -23,21 +29,25 @@ export function LobbyScreen() {
   const isHost = myRole === 'host';
   const total = ls.red.length + ls.blue.length + ls.spec.length;
 
-  // Sync guest with game start
+  // Sync guest with game start and lobby updates
   useEffect(() => {
     if (!isHost) {
       const guest = getSharedGuest();
       if (guest) {
+        // Always listen for game start, but only switch screen if NOT already in game/overlay
         guest.onGameStart = (players, settings) => {
           console.log('[LobbyScreen] Guest received game_start!');
-          setScreen('game');
+          if (!isOverlay) setScreen('game');
         };
+        
+        // Always listen for lobby updates to keep state in sync
         guest.onLobbyUpdate = (state) => {
           setLobbyState(state);
+          // Never switch screen on lobby update here
         };
       }
     }
-  }, [isHost, setScreen, setLobbyState]);
+  }, [isHost, setScreen, setLobbyState, isOverlay]);
 
   // Broadcast lobby changes when host modifies state
   useEffect(() => {
@@ -243,13 +253,24 @@ export function LobbyScreen() {
 
       {/* Actions */}
       <div className="w-[min(98vw,900px)] flex gap-2 shrink-0 z-[1]">
-        <PlayButton onClick={leaveLobby} variant="secondary" className="flex-none w-[80px] !py-[12px] !text-[0.9rem] !rounded-[11px]">← Cik</PlayButton>
-        {isHost && (
-          <PlayButton onClick={randomize} variant="purple" className="flex-1 !py-[12px] !text-[0.9rem] !rounded-[11px]">🎲 Rastgele</PlayButton>
+        {!isOverlay ? (
+          <>
+            <PlayButton onClick={leaveLobby} variant="secondary" className="flex-none w-[80px] !py-[12px] !text-[0.9rem] !rounded-[11px]">← Cik</PlayButton>
+            {isHost && (
+              <PlayButton onClick={randomize} variant="purple" className="flex-1 !py-[12px] !text-[0.9rem] !rounded-[11px]">🎲 Rastgele</PlayButton>
+            )}
+            <PlayButton onClick={startMatch} disabled={!canStart || !isHost} className="flex-[2] !py-[12px] !text-[0.9rem] !rounded-[11px]">
+              {isHost ? '⚽ MACA BASLA' : 'Host baslatacak...'}
+            </PlayButton>
+          </>
+        ) : (
+          <>
+            <PlayButton onClick={onBackToGame || (() => {})} className="flex-[2] !py-[12px] !text-[0.9rem] !rounded-[11px]">← OYUNA DON</PlayButton>
+            {isHost && (
+              <PlayButton onClick={onEndMatch || (() => {})} variant="secondary" className="flex-1 !py-[12px] !text-[0.9rem] !rounded-[11px] !border-red-500/50 !text-red-400">MACI BITIR</PlayButton>
+            )}
+          </>
         )}
-        <PlayButton onClick={startMatch} disabled={!canStart || !isHost} className="flex-[2] !py-[12px] !text-[0.9rem] !rounded-[11px]">
-          {isHost ? '⚽ MACA BASLA' : 'Host baslatacak...'}
-        </PlayButton>
       </div>
     </div>
   );

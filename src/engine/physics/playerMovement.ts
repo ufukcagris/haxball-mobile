@@ -22,29 +22,15 @@ export function applyPlayerMovement(
 
   const ballSpd = Math.hypot(ball.vx, ball.vy);
   const playerSpd = Math.hypot(player.vx, player.vy);
-  const isFastDribble = ballSpd > playerSpd * 0.6 && playerSpd > MAX_PLAYER_SPEED * gs.scale * 0.55;
+  
+  // Power shot condition: dribbling + BALL must be moving at high speed
+  // Using 75% of max speed as a more balanced threshold
+  const isBallFastEnough = ballSpd > (MAX_PLAYER_SPEED * gs.scale) * 0.75;
 
-  // Direction consistency: reset on sudden turn
-  let isStraight = false;
-  if (isFastDribble) {
-    const inputMag = Math.hypot(inX, inY);
-    if (inputMag > JOYSTICK_DEAD) {
-      const nx = inX / inputMag;
-      const ny = inY / inputMag;
-      const pd = gs.prevInputDir;
-      const dot = pd ? nx * pd.x + ny * pd.y : 1;
-      isStraight = dot > 0.90;
-      gs.prevInputDir = { x: nx, y: ny };
-    } else {
-      gs.prevInputDir = null;
-    }
-  } else {
-    gs.prevInputDir = null;
-  }
-
-  if (isDribbling && isFastDribble && isStraight) {
+  if (isDribbling && isBallFastEnough) {
     player.moveDuration = Math.min(player.moveDuration + 1, POWER_SHOT_START + 80);
   } else {
+    // Reset if speed drops below 75% or ball is lost
     player.moveDuration = 0;
   }
 

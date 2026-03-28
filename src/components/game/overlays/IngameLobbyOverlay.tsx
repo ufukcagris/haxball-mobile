@@ -77,10 +77,12 @@ export function IngameLobbyOverlay() {
   );
 
   return (
-    <div className='flex gap-2 w-full max-w-[500px] mt-4 z-101'>
-      {renderTeam('red', 'Kirmizi', 'var(--red-team)')}
-      {renderTeam('spec', 'Izleyici', 'var(--text-dim)')}
-      {renderTeam('blue', 'Mavi', 'var(--blue-team)')}
+    <div className='flex flex-col gap-3 w-full max-w-[500px] mt-4 z-101'>
+      <div className='grid grid-cols-3 gap-2'>
+        {renderTeam('red', 'Kirmizi', 'var(--red-team)')}
+        {renderTeam('spec', 'Izleyici', 'var(--text-dim)')}
+        {renderTeam('blue', 'Mavi', 'var(--blue-team)')}
+      </div>
     </div>
   );
 }

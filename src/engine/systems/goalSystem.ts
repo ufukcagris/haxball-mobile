@@ -13,10 +13,12 @@ export function checkGoal(gs: GameState): GoalResult {
 
   let scored: 'red' | 'blue' | null = null;
 
-  if (ball.x - br < ox - gd + br && ball.y > midY - halfG && ball.y < midY + halfG) {
+  // Left Goal (Blue scores): Entire ball must be past ox
+  if (ball.x + br < ox && ball.y > midY - halfG && ball.y < midY + halfG) {
     scored = 'blue';
   }
-  if (ball.x + br > ox + fw + gd - br && ball.y > midY - halfG && ball.y < midY + halfG) {
+  // Right Goal (Red scores): Entire ball must be past ox + fw
+  if (ball.x - br > ox + fw && ball.y > midY - halfG && ball.y < midY + halfG) {
     scored = 'red';
   }
 

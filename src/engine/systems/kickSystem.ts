@@ -71,6 +71,12 @@ export function doKick(player: PlayerState | null, gs: GameState): void {
   ball.lastKickedBy = 'red';
   player.kickCd = 16;
   player.moveDuration = 0;
+
+  // Deactivate kickoff on kick
+  if (gs.kickoff?.active) {
+    gs.kickoff.active = false;
+  }
+
   if (powerMult <= 1.1) {
     spawnParticles(gs, ball.x, ball.y, '#ffcc00');
   } else {

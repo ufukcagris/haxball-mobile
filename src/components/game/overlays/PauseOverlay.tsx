@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useGameStore } from '@/stores/useGameStore';
 import { useLobbyStore } from '@/stores/useLobbyStore';
 import { OverlayButton } from '@/components/ui/OverlayButton';
+import { IngameLobbyOverlay } from './IngameLobbyOverlay';
 
 interface PauseOverlayProps {
   onResume: () => void;
@@ -13,21 +15,46 @@ interface PauseOverlayProps {
 export function PauseOverlay({ onResume, onMenu, onLobby }: PauseOverlayProps) {
   const isPaused = useGameStore((s) => s.paused);
   const myRole = useLobbyStore((s) => s.myRole);
+  const [showConfirmExit, setShowConfirmExit] = useState(false);
 
   if (!isPaused) return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center flex-col gap-2.5 z-[100]"
+    <div className="absolute inset-0 flex items-center justify-center flex-col p-4 z-[100]"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', pointerEvents: 'all' }}
     >
-      <div className="text-[clamp(1.6rem,5vw,2.6rem)] font-black tracking-tight mb-4 text-[var(--accent)]">⏸ DURAKLATILDI</div>
-      <div className="flex flex-col gap-3 w-[220px]">
-        <OverlayButton onClick={onResume}>DEVAM ET</OverlayButton>
-        {myRole === 'host' && onLobby && (
-          <OverlayButton onClick={onLobby} className="!border-[var(--yellow)] !text-[var(--yellow)]">LOBIYE DON</OverlayButton>
-        )}
-        <OverlayButton onClick={onMenu} variant="secondary">ANA MENU</OverlayButton>
-      </div>
+      {showConfirmExit ? (
+        <div className="flex flex-col items-center">
+          <div className="text-[1.1rem] font-bold text-white mb-6 text-center leading-tight">
+            Oyundan cikmak istedigine<br/>emin misin?
+          </div>
+          <div className="flex flex-col gap-3 w-[220px]">
+            <OverlayButton onClick={onMenu} variant="secondary" className="!border-red-500/50 !text-red-400">EVET, CIK</OverlayButton>
+            <OverlayButton onClick={() => setShowConfirmExit(false)}>HAYIR, DEVAM ET</OverlayButton>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="text-[clamp(1.4rem,4vw,2.2rem)] font-black tracking-tight mb-6 text-[var(--accent)] uppercase">⏸ DURAKLATILDI</div>
+          
+          <div className="flex flex-col gap-3 w-[220px]">
+            <OverlayButton onClick={onResume}>DEVAM ET</OverlayButton>
+            {onLobby && (
+              <OverlayButton onClick={onLobby} className="!border-[var(--yellow)] !text-[var(--yellow)]">LOBIYI AC</OverlayButton>
+            )}
+            <OverlayButton onClick={() => setShowConfirmExit(true)} variant="secondary">OYUNDAN CIK</OverlayButton>
+          </div>
+
+          <div className="mt-8 text-[0.6rem] text-white/40 uppercase tracking-[2px] font-bold">Takimlar</div>
+          <IngameLobbyOverlay />
+
+          {myRole === 'host' && (
+            <div className="mt-4 text-[0.65rem] text-[var(--yellow)] opacity-60">
+              * Oyuncu sec → takima tikla (Takim degistir)
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

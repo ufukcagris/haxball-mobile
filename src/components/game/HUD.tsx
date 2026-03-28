@@ -30,7 +30,7 @@ export function HUD() {
       <div className="flex items-center gap-[7px] min-w-[70px]">
         <div>
           <div className="text-[0.65rem] font-bold opacity-70 uppercase tracking-[1px] text-[var(--red-team)]">
-            {redNick}
+            KIRMIZI
           </div>
         </div>
         <div className="font-['Share_Tech_Mono',monospace] text-[1.4rem] font-bold text-[var(--red-team)]"
@@ -77,7 +77,7 @@ export function HUD() {
       <div className="flex items-center gap-[7px] min-w-[70px] flex-row-reverse">
         <div className="text-right">
           <div className="text-[0.65rem] font-bold opacity-70 uppercase tracking-[1px] text-[var(--blue-team)]">
-            {blueNick}
+            MAVİ
           </div>
         </div>
         <div className="font-['Share_Tech_Mono',monospace] text-[1.4rem] font-bold text-[var(--blue-team)]"

@@ -1,13 +1,18 @@
-import { PlayerState, BallState } from '../types';
+import { PlayerState, BallState, GameState } from '../types';
 import { BALL_MASS, PLAYER_MASS, RESTITUTION } from '@/config/constants';
 
-export function resolvePlayerBallCollision(player: PlayerState, ball: BallState): void {
+export function resolvePlayerBallCollision(player: PlayerState, ball: BallState, gs: GameState): void {
   const dx = ball.x - player.x;
   const dy = ball.y - player.y;
   const dist = Math.hypot(dx, dy);
   const minD = player.r + ball.r;
 
   if (dist >= minD || dist < 0.01) return;
+
+  // Touch detected! If kickoff was active, it's over now.
+  if (gs.kickoff?.active) {
+    gs.kickoff.active = false;
+  }
 
   const nx = dx / dist;
   const ny = dy / dist;

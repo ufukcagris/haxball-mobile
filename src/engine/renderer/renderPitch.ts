@@ -9,23 +9,31 @@ export function renderPitch(ctx: CanvasRenderingContext2D, gs: GameState): void 
   const halfG = gw / 2;
 
   // Background
-  ctx.fillStyle = '#0a0e1a';
+  ctx.fillStyle = '#060a10';
   ctx.fillRect(0, 0, W, H);
 
-  // Outer shadow
-  ctx.shadowColor = 'rgba(0,229,255,0.12)';
-  ctx.shadowBlur = 30;
+  // Physical Arena Boundaries (Where the walls are)
+  const outerXMin = ox - gd;
+  const outerXMax = ox + fw + gd;
+  const outerYMin = oy - gd;
+  const outerYMax = oy + fh + gd;
+  const arenaW = fw + gd * 2;
+  const arenaH = fh + gd * 2;
+
+  // Outer shadow & Main pitch background
+  ctx.shadowColor = 'rgba(0,229,255,0.08)';
+  ctx.shadowBlur = 40;
   ctx.fillStyle = '#0d2015';
-  roundRect(ctx, ox - gd, oy, fw + gd * 2, fh, 8 * scale);
+  roundRect(ctx, outerXMin, outerYMin, arenaW, arenaH, 12 * scale);
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  // Grass stripes
-  const stripeCount = 10;
-  const sw = fw / stripeCount;
+  // Grass stripes (Extended to full arena height)
+  const stripeCount = 12;
+  const sw = arenaW / stripeCount;
   for (let i = 0; i < stripeCount; i++) {
     ctx.fillStyle = i % 2 === 0 ? '#0d2015' : '#0b1c12';
-    ctx.fillRect(ox + i * sw, oy, sw, fh);
+    ctx.fillRect(outerXMin + i * sw, outerYMin, sw, arenaH);
   }
 
   // Left goal

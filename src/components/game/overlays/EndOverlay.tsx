@@ -11,27 +11,32 @@ interface EndOverlayProps {
 
 export function EndOverlay({ onRestart, onMenu }: EndOverlayProps) {
   const { showEndOverlay, scoreRed, scoreBlue } = useGameStore();
-  const { config } = useAppStore();
 
   if (!showEndOverlay) return null;
 
-  let sub = 'Beraberlik! 🤝';
-  if (scoreRed > scoreBlue) sub = `${config.nick} Kazandi! 🏆 🔴`;
-  else if (scoreBlue > scoreRed) sub = 'Bot Kazandi! 🤖 🔵';
+  const winner = scoreRed > scoreBlue ? 'red' : scoreBlue > scoreRed ? 'blue' : 'draw';
 
   return (
     <div className="absolute inset-0 flex items-center justify-center flex-col gap-2.5 z-[100]"
-      style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)' }}
+      style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(12px)' }}
     >
-      <div className="text-[clamp(1.6rem,5vw,2.6rem)] font-black tracking-tight">⚽ MAC SONA ERDI</div>
+      <div className="text-[0.8rem] font-black tracking-[4px] text-white/40 uppercase mb-2">Mac Sona Erdi</div>
+      
       <div className="flex items-center gap-[18px] font-['Share_Tech_Mono',monospace] text-[2.2rem] font-bold">
-        <span style={{ color: 'var(--red-team)' }}>{scoreRed}</span>
-        <span className="text-[var(--text-dim)] text-[1.4rem]">-</span>
-        <span style={{ color: 'var(--blue-team)' }}>{scoreBlue}</span>
+        <span className="text-[var(--red-team)]" style={{ textShadow: '0 0 15px rgba(255,61,113,0.5)' }}>{scoreRed}</span>
+        <span className="text-white/20">-</span>
+        <span className="text-[var(--blue-team)]" style={{ textShadow: '0 0 15px rgba(0,229,255,0.5)' }}>{scoreBlue}</span>
       </div>
-      <div className="text-[0.85rem] text-[var(--text-dim)] tracking-[1px]">{sub}</div>
-      <OverlayButton onClick={onRestart}>TEKRAR OYNA</OverlayButton>
-      <OverlayButton onClick={onMenu} variant="secondary">ANA MENU</OverlayButton>
+
+      <div className={`mt-4 text-[1.1rem] font-black tracking-[2px] uppercase
+        ${winner === 'red' ? 'text-[var(--red-team)]' : winner === 'blue' ? 'text-[var(--blue-team)]' : 'text-white/60'}`}
+      >
+        {winner === 'red' ? '🔴 KIRMIZI KAZANDI' : winner === 'blue' ? '🔵 MAVİ KAZANDI' : '🤝 BERABERE'}
+      </div>
+
+      <div className="mt-10 text-[0.65rem] text-white/30 tracking-[2px] animate-pulse uppercase">
+        3 saniye sonra lobiye donuluyor...
+      </div>
     </div>
   );
 }

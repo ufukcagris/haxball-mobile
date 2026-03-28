@@ -1,12 +1,12 @@
 // Physics
 export const PLAYER_RADIUS = 15;
-export const BALL_RADIUS = 11;
-export const BALL_FRICTION = 0.972;
-export const KICK_POWER = 9.0;
+export const BALL_RADIUS = 6.5;
+export const BALL_FRICTION = 0.988;
+export const KICK_POWER = 7.0;
 export const KICK_CHARGE_MAX = 28;
 
 // Movement
-export const MAX_PLAYER_SPEED = 2.3;
+export const MAX_PLAYER_SPEED = 2.5;
 export const ACCEL_FACTOR = 0.14;
 export const DECEL_FACTOR = 0.08;
 export const JOYSTICK_DEAD = 0.06;

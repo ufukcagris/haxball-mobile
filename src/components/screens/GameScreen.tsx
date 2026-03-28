@@ -2,7 +2,7 @@
 
 import { getSharedHost } from '@/components/screens/CreateRoomScreen';
 import { getSharedGuest } from '@/components/screens/JoinRoomScreen';
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useGameStore } from '@/stores/useGameStore';
 import { useLobbyStore } from '@/stores/useLobbyStore';
@@ -13,6 +13,8 @@ import { PauseOverlay } from '@/components/game/overlays/PauseOverlay';
 import { GoalOverlay } from '@/components/game/overlays/GoalOverlay';
 import { EndOverlay } from '@/components/game/overlays/EndOverlay';
 import { HUD_HEIGHT } from '@/config/constants';
+import { LobbyScreen } from './LobbyScreen';
+import { OverlayButton } from '../ui/OverlayButton';
 
 export function GameScreen() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,10 +25,10 @@ export function GameScreen() {
   const goalFlashRef = useRef<HTMLDivElement>(null);
 
   const { config, screen, setScreen } = useAppStore();
-  const gameStore = useGameStore();
+  const { paused, setPaused, showFullLobby, setShowFullLobby } = useGameStore();
   const { myRole, lobbyState, myPeerId, setLobbyState } = useLobbyStore();
 
-  const goLobby = useCallback(() => {
+  const goLobbyReturn = useCallback(() => {
     if (myRole === 'host') {
       const hostManager = getSharedHost();
       if (hostManager) {
@@ -43,7 +45,6 @@ export function GameScreen() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Size canvas
     canvas.width = window.innerWidth;
     canvas.height = Math.max(window.innerHeight - HUD_HEIGHT, 100);
 
@@ -54,13 +55,11 @@ export function GameScreen() {
       nick: config.nick,
     });
 
-    // Callbacks
     engine.onHUDUpdate = (data) => {
       useGameStore.getState().updateHUD(data);
     };
     engine.onGoal = (team) => {
       useGameStore.getState().setGoal(team);
-      // Flash
       const flash = goalFlashRef.current;
       if (flash) {
         flash.className = `goal-flash flash-${team}`;
@@ -68,22 +67,25 @@ export function GameScreen() {
       }
       setTimeout(() => {
         useGameStore.getState().clearGoal();
-      }, 2000);
+      }, 4000);
     };
     engine.onEnd = () => {
       useGameStore.getState().setEnd();
+      // Auto return to lobby after 3 seconds
+      setTimeout(() => {
+        goLobbyReturn();
+      }, 3000);
     };
 
-    // Keyboard
     engine.keyboardInput.attach(
       () => {
-        // Toggle pause/menu overlay
         const currentlyPaused = useGameStore.getState().paused;
         if (!currentlyPaused) {
           useGameStore.getState().setPaused(true);
           if (myRole === 'solo') engine.pause();
         } else {
           useGameStore.getState().setPaused(false);
+          useGameStore.getState().setShowFullLobby(false);
           if (myRole === 'solo') engine.resume();
         }
       },
@@ -91,7 +93,6 @@ export function GameScreen() {
     );
     engine.keyboardInput.setGameState(engine.getState());
 
-    // Touch
     if (zoneRef.current && jBaseRef.current && jKnobRef.current) {
       engine.touchInput.attach(
         zoneRef.current,
@@ -101,12 +102,8 @@ export function GameScreen() {
       );
     }
 
-    // Setup nicks
     if (myRole === 'solo') {
-      useGameStore.getState().setNicks(
-        config.nick,
-        config.diff === 'none' ? '—' : 'BOT'
-      );
+      useGameStore.getState().setNicks(config.nick, config.diff === 'none' ? '—' : 'BOT');
       engine.initSoloGame();
     } else {
       const redNick = lobbyState.red.map(p => p.nick).join(' & ') || 'KIRMIZI';
@@ -148,7 +145,6 @@ export function GameScreen() {
           engine.onEnd?.();
         };
         guestManager.onLobbyReturn = (state) => {
-          console.log('[GameScreen] Guest received lobby_return!');
           setLobbyState(state);
           engine.destroy();
           setScreen('lobby');
@@ -159,7 +155,6 @@ export function GameScreen() {
     engine.start();
     engineRef.current = engine;
 
-    // Resize handler
     const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = Math.max(window.innerHeight - HUD_HEIGHT, 100);
@@ -172,7 +167,8 @@ export function GameScreen() {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [config, myRole, lobbyState, myPeerId, setLobbyState, setScreen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config, myRole, myPeerId, setLobbyState, setScreen, JSON.stringify(lobbyState.settings)]);
 
   useEffect(() => {
     if (screen !== 'game') return;
@@ -181,8 +177,23 @@ export function GameScreen() {
     return cleanup;
   }, [screen, initEngine]);
 
+  useEffect(() => {
+    if (screen === 'game' && myRole !== 'solo' && engineRef.current) {
+      const players = [
+        ...lobbyState.red.map((p, i) => ({ id: p.id, nick: p.nick, team: 'red' as const, idx: i, total: lobbyState.red.length })),
+        ...lobbyState.blue.map((p, i) => ({ id: p.id, nick: p.nick, team: 'blue' as const, idx: i, total: lobbyState.blue.length }))
+      ];
+      engineRef.current.updateMultiPlayers(players);
+
+      const redNick = lobbyState.red.map(p => p.nick).join(' & ') || 'KIRMIZI';
+      const blueNick = lobbyState.blue.map(p => p.nick).join(' & ') || 'MAVİ';
+      useGameStore.getState().setNicks(redNick, blueNick);
+    }
+  }, [lobbyState, screen, myRole]);
+
   const resumeGame = () => {
-    useGameStore.getState().setPaused(false);
+    setPaused(false);
+    setShowFullLobby(false);
     engineRef.current?.resume();
   };
 
@@ -220,10 +231,8 @@ export function GameScreen() {
       </div>
 
       <div ref={goalFlashRef} className="goal-flash" />
-
       <JoystickZone zoneRef={zoneRef} jBaseRef={jBaseRef} jKnobRef={jKnobRef} />
 
-      {/* Kick zone hint */}
       <div
         className="absolute bottom-0 right-0 pointer-events-none z-[31]"
         style={{
@@ -235,7 +244,24 @@ export function GameScreen() {
         <span className="absolute bottom-7 left-1/2 -translate-x-1/2 text-[1.2rem] opacity-[0.18]">⚡</span>
       </div>
 
-      <PauseOverlay onResume={resumeGame} onMenu={goMenu} onLobby={goLobby} />
+      {!showFullLobby && (
+        <PauseOverlay 
+          onResume={resumeGame} 
+          onMenu={goMenu} 
+          onLobby={() => setShowFullLobby(true)} 
+        />
+      )}
+
+      {showFullLobby && paused && (
+        <div className="absolute inset-0 z-[110] bg-[#0a0e1a] flex flex-col">
+          <LobbyScreen 
+            isOverlay 
+            onBackToGame={() => setShowFullLobby(false)} 
+            onEndMatch={goLobbyReturn} 
+          />
+        </div>
+      )}
+
       <GoalOverlay />
       <EndOverlay onRestart={restartGame} onMenu={goMenu} />
     </div>
