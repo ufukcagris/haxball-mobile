@@ -34,11 +34,14 @@ export function LobbyScreen({
     addToLobby,
     chatMessages,
     addChatMessage,
+    hasJoinedMessageShown,
+    setHasJoinedMessageShown,
   } = useLobbyStore();
 
   const [toast, setToast] = useState({ message: '', visible: false });
   const [chatInput, setChatInput] = useState('');
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showRoomClosed, setShowRoomClosed] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   const colors = [
@@ -82,6 +85,7 @@ export function LobbyScreen({
     (isTyping: boolean) => {
       const nick = config.nick;
       if (isHost) {
+        getSharedHost()?.broadcastChat(nick, isTyping ? '...' : ''); // Actually broadcastTyping is used
         getSharedHost()?.broadcastTyping(nick, isTyping);
         if (activeEngine && myPeerId)
           activeEngine.setTyping(myPeerId, isTyping);
@@ -99,6 +103,14 @@ export function LobbyScreen({
     }
   }, [chatMessages]);
 
+  // Local welcome message
+  useEffect(() => {
+    if (!hasJoinedMessageShown) {
+      addChatMessage('SİSTEM', 'Odaya katildin');
+      setHasJoinedMessageShown(true);
+    }
+  }, [addChatMessage, hasJoinedMessageShown, setHasJoinedMessageShown]);
+
   // Sync guest with game start and lobby updates
   useEffect(() => {
     if (!isHost) {
@@ -114,6 +126,10 @@ export function LobbyScreen({
         guest.onChatMessage = (nick, msg) => {
           addChatMessage(nick, msg);
           triggerInGameBubble(nick, msg);
+        };
+        guest.onDisconnect = () => {
+          console.log('[LobbyScreen] Disconnected from host');
+          setShowRoomClosed(true);
         };
         guest.onPlayerTyping = (nick, typing) => {
           if (!activeEngine) return;
@@ -294,6 +310,35 @@ export function LobbyScreen({
   };
 
   const canStart = ls.red.length > 0 || ls.blue.length > 0;
+
+  if (showRoomClosed) {
+    return (
+      <div
+        className='flex flex-col items-center justify-center gap-6 w-full h-full'
+        style={{
+          background: 'radial-gradient(ellipse at 40% 30%, #400d0d 0%, #0a0e1a 70%)',
+        }}
+      >
+        <div className='menu-bg' />
+        <div className='text-[1.2rem] font-bold text-white z-10 text-center leading-tight'>
+          Baglanti Kesildi<br/>
+          <span className="text-[0.9rem] opacity-60 font-normal">Oda kapatildi veya host ayrildi</span>
+        </div>
+        <div className='flex flex-col gap-3 w-[240px] z-10'>
+          <PlayButton 
+            onClick={() => {
+              resetLobby();
+              setScreen('menu');
+            }} 
+            variant="secondary" 
+            className="py-3!"
+          >
+            ANA MENUYE DON
+          </PlayButton>
+        </div>
+      </div>
+    );
+  }
 
   if (showExitConfirm) {
     return (

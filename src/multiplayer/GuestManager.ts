@@ -91,8 +91,14 @@ export class GuestManager {
       }
     });
 
-    conn.on('close', () => this.onDisconnect?.());
-    conn.on('error', (e) => this.onError?.(e.type));
+    conn.on('close', () => {
+      console.log('[GuestManager] Connection to host CLOSED');
+      this.onDisconnect?.();
+    });
+    conn.on('error', (e) => {
+      console.error('[GuestManager] Connection to host ERROR:', e);
+      this.onDisconnect?.();
+    });
   }
 
   sendInput(dx: number, dy: number, kickHeld: boolean): void {

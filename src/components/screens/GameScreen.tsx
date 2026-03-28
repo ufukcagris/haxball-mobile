@@ -2,7 +2,7 @@
 
 import { getSharedHost } from '@/components/screens/CreateRoomScreen';
 import { getSharedGuest } from '@/components/screens/JoinRoomScreen';
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useGameStore } from '@/stores/useGameStore';
 import { useLobbyStore } from '@/stores/useLobbyStore';
@@ -14,6 +14,7 @@ import { GoalOverlay } from '@/components/game/overlays/GoalOverlay';
 import { EndOverlay } from '@/components/game/overlays/EndOverlay';
 import { HUD_HEIGHT } from '@/config/constants';
 import { LobbyScreen } from './LobbyScreen';
+import { PlayButton } from '../ui/PlayButton';
 
 export let activeEngine: GameEngine | null = null;
 
@@ -27,7 +28,9 @@ export function GameScreen() {
 
   const { config, screen, setScreen } = useAppStore();
   const { paused, setPaused, showFullLobby, setShowFullLobby } = useGameStore();
-  const { myRole, lobbyState, myPeerId, setLobbyState } = useLobbyStore();
+  const { myRole, lobbyState, myPeerId, setLobbyState, resetLobby } =
+    useLobbyStore();
+  const [showRoomClosed, setShowRoomClosed] = useState(false);
 
   const goLobbyReturn = useCallback(() => {
     if (myRole === 'host') {
@@ -55,6 +58,7 @@ export function GameScreen() {
       time: config.time,
       diff: config.diff,
       nick: config.nick,
+      goalLimit: lobbyState.settings.goals,
     });
 
     engine.onHUDUpdate = (data) => {
@@ -62,7 +66,7 @@ export function GameScreen() {
     };
     engine.onGoal = (team) => {
       useGameStore.getState().setGoal(team);
-      
+
       // Broadcast goal if Host
       if (myRole === 'host') {
         getSharedHost()?.broadcastGoal(team);
@@ -71,7 +75,9 @@ export function GameScreen() {
       const flash = goalFlashRef.current;
       if (flash) {
         flash.className = `goal-flash flash-${team}`;
-        setTimeout(() => { flash.className = 'goal-flash'; }, 500);
+        setTimeout(() => {
+          flash.className = 'goal-flash';
+        }, 500);
       }
       setTimeout(() => {
         useGameStore.getState().clearGoal();
@@ -97,7 +103,7 @@ export function GameScreen() {
           if (myRole === 'solo') engine.resume();
         }
       },
-      () => engine.getLocalPlayer()
+      () => engine.getLocalPlayer(),
     );
     engine.keyboardInput.setGameState(engine.getState());
 
@@ -106,25 +112,45 @@ export function GameScreen() {
         zoneRef.current,
         jBaseRef.current,
         jKnobRef.current,
-        () => engine.getLocalPlayer()
+        () => engine.getLocalPlayer(),
       );
     }
 
     if (myRole === 'solo') {
-      useGameStore.getState().setNicks(config.nick, config.diff === 'none' ? '—' : 'BOT');
+      useGameStore
+        .getState()
+        .setNicks(config.nick, config.diff === 'none' ? '—' : 'BOT');
       engine.initSoloGame();
     } else {
-      const redNick = lobbyState.red.map(p => p.nick).join(' & ') || 'KIRMIZI';
-      const blueNick = lobbyState.blue.map(p => p.nick).join(' & ') || 'MAVİ';
+      const redNick =
+        lobbyState.red.map((p) => p.nick).join(' & ') || 'KIRMIZI';
+      const blueNick = lobbyState.blue.map((p) => p.nick).join(' & ') || 'MAVİ';
       useGameStore.getState().setNicks(redNick, blueNick);
 
       const players = [
-        ...lobbyState.red.map((p, i) => ({ id: p.id, nick: p.nick, team: 'red' as const, idx: i, total: lobbyState.red.length })),
-        ...lobbyState.blue.map((p, i) => ({ id: p.id, nick: p.nick, team: 'blue' as const, idx: i, total: lobbyState.blue.length }))
+        ...lobbyState.red.map((p, i) => ({
+          id: p.id,
+          nick: p.nick,
+          team: 'red' as const,
+          idx: i,
+          total: lobbyState.red.length,
+        })),
+        ...lobbyState.blue.map((p, i) => ({
+          id: p.id,
+          nick: p.nick,
+          team: 'blue' as const,
+          idx: i,
+          total: lobbyState.blue.length,
+        })),
       ];
 
-      engine.initMultiGame(players, lobbyState.settings, myPeerId || '', myRole === 'host');
-      
+      engine.initMultiGame(
+        players,
+        lobbyState.settings,
+        myPeerId || '',
+        myRole === 'host',
+      );
+
       const hostManager = getSharedHost();
       const guestManager = getSharedGuest();
 
@@ -153,18 +179,19 @@ export function GameScreen() {
           console.log('[GameScreen] Guest received lobby sync mid-game');
           setLobbyState(state);
         };
+        guestManager.onDisconnect = () => {
+          console.log('[GameScreen] Disconnected from host during game');
+          setShowRoomClosed(true);
+        };
         guestManager.onGameEnd = (scoreRed, scoreBlue) => {
-          // Sync end state for guests
           useGameStore.getState().updateHUD({
             scoreRed,
             scoreBlue,
             timeLeft: 0,
             overtime: false,
-            time: config.time
+            time: config.time,
           });
           useGameStore.getState().setEnd();
-          
-          // Guests also auto return after 3s
           setTimeout(() => {
             setScreen('lobby');
           }, 3000);
@@ -195,7 +222,16 @@ export function GameScreen() {
       activeEngine = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config, myRole, myPeerId, setLobbyState, setScreen, JSON.stringify(lobbyState.settings)]);
+  }, [
+    config,
+    myRole,
+    myPeerId,
+    setLobbyState,
+    setScreen,
+    lobbyState.settings.pitch,
+    lobbyState.settings.time,
+    lobbyState.settings.goals,
+  ]);
 
   useEffect(() => {
     if (screen !== 'game') return;
@@ -207,15 +243,28 @@ export function GameScreen() {
   useEffect(() => {
     if (screen === 'game' && myRole !== 'solo' && engineRef.current) {
       const players = [
-        ...lobbyState.red.map((p, i) => ({ id: p.id, nick: p.nick, team: 'red' as const, idx: i, total: lobbyState.red.length })),
-        ...lobbyState.blue.map((p, i) => ({ id: p.id, nick: p.nick, team: 'blue' as const, idx: i, total: lobbyState.blue.length }))
+        ...lobbyState.red.map((p, i) => ({
+          id: p.id,
+          nick: p.nick,
+          team: 'red' as const,
+          idx: i,
+          total: lobbyState.red.length,
+        })),
+        ...lobbyState.blue.map((p, i) => ({
+          id: p.id,
+          nick: p.nick,
+          team: 'blue' as const,
+          idx: i,
+          total: lobbyState.blue.length,
+        })),
       ];
-      
+
       console.log('[GameScreen] Syncing players mid-game:', players.length);
       engineRef.current.updateMultiPlayers(players);
 
-      const redNick = lobbyState.red.map(p => p.nick).join(' & ') || 'KIRMIZI';
-      const blueNick = lobbyState.blue.map(p => p.nick).join(' & ') || 'MAVİ';
+      const redNick =
+        lobbyState.red.map((p) => p.nick).join(' & ') || 'KIRMIZI';
+      const blueNick = lobbyState.blue.map((p) => p.nick).join(' & ') || 'MAVİ';
       useGameStore.getState().setNicks(redNick, blueNick);
     }
   }, [lobbyState, screen, myRole]);
@@ -234,44 +283,91 @@ export function GameScreen() {
     setScreen('menu');
   };
 
+  if (showRoomClosed) {
+    return (
+      <div
+        className='flex flex-col items-center justify-center gap-6 w-full h-full'
+        style={{
+          background:
+            'radial-gradient(ellipse at 40% 30%, #400d0d 0%, #0a0e1a 70%)',
+        }}
+      >
+        <div className='menu-bg' />
+        <div className='text-[1.2rem] font-bold text-white z-10 text-center leading-tight'>
+          Baglanti Kesildi
+          <br />
+          <span className='text-[0.9rem] opacity-60 font-normal'>
+            Oda kapatildi veya host ayrildi
+          </span>
+        </div>
+        <div className='flex flex-col gap-3 w-[240px] z-10'>
+          <PlayButton
+            onClick={() => {
+              resetLobby();
+              setScreen('menu');
+            }}
+            variant='secondary'
+            className='py-3!'
+          >
+            ANA MENUYE DON
+          </PlayButton>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-black flex flex-col overflow-hidden w-full h-full" style={{ touchAction: 'none' }}>
+    <div
+      className='bg-black flex flex-col overflow-hidden w-full h-full'
+      style={{ touchAction: 'none' }}
+    >
       <HUD />
 
-      <div className="absolute left-0 right-0 bottom-0 flex items-center justify-center overflow-hidden"
-        style={{ top: `${HUD_HEIGHT}px`, touchAction: 'none', background: '#060a10' }}
+      <div
+        className='absolute left-0 right-0 bottom-0 flex items-center justify-center overflow-hidden'
+        style={{
+          top: `${HUD_HEIGHT}px`,
+          touchAction: 'none',
+          background: '#060a10',
+        }}
       >
-        <canvas ref={canvasRef} className="block" style={{ touchAction: 'none' }} />
+        <canvas
+          ref={canvasRef}
+          className='block'
+          style={{ touchAction: 'none' }}
+        />
       </div>
 
-      <div ref={goalFlashRef} className="goal-flash" />
+      <div ref={goalFlashRef} className='goal-flash' />
       <JoystickZone zoneRef={zoneRef} jBaseRef={jBaseRef} jKnobRef={jKnobRef} />
 
       <div
-        className="absolute bottom-0 right-0 pointer-events-none z-31"
+        className='absolute bottom-0 right-0 pointer-events-none z-31'
         style={{
           top: `${HUD_HEIGHT}px`,
           width: '33.33%',
           borderLeft: '1px solid rgba(255,200,0,0.12)',
         }}
       >
-        <span className="absolute bottom-7 left-1/2 -translate-x-1/2 text-[1.2rem] opacity-18">⚡</span>
+        <span className='absolute bottom-7 left-1/2 -translate-x-1/2 text-[1.2rem] opacity-18'>
+          ⚡
+        </span>
       </div>
 
       {!showFullLobby && (
-        <PauseOverlay 
-          onResume={resumeGame} 
-          onMenu={goMenu} 
-          onLobby={() => setShowFullLobby(true)} 
+        <PauseOverlay
+          onResume={resumeGame}
+          onMenu={goMenu}
+          onLobby={() => setShowFullLobby(true)}
         />
       )}
 
       {showFullLobby && paused && (
-        <div className="absolute inset-0 z-110 bg-[#0a0e1a] flex flex-col">
-          <LobbyScreen 
-            isOverlay 
-            onBackToGame={() => setShowFullLobby(false)} 
-            onEndMatch={goLobbyReturn} 
+        <div className='absolute inset-0 z-110 bg-[#0a0e1a] flex flex-col'>
+          <LobbyScreen
+            isOverlay
+            onBackToGame={() => setShowFullLobby(false)}
+            onEndMatch={goLobbyReturn}
           />
         </div>
       )}
