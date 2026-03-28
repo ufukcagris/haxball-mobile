@@ -29,6 +29,7 @@ export interface PlayerState {
   peerId?: string;
   nick?: string;
   isMe?: boolean;
+  chatBubble?: { message: string; timer: number };
 }
 
 export interface Particle {

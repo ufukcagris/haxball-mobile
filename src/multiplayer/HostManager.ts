@@ -13,6 +13,7 @@ export class HostManager {
   public onPlayerJoined: ((pid: string, nick: string) => void) | null = null;
   public onPlayerLeft: ((pid: string) => void) | null = null;
   public onChatMessage: ((nick: string, message: string) => void) | null = null;
+  public onPlayerTyping: ((nick: string, typing: boolean) => void) | null = null;
   public onRemoteInput:
     | ((
         pid: string,
@@ -131,6 +132,12 @@ export class HostManager {
             this.broadcastChat(authoritativeNick, msg.message);
           }
 
+          if (msg.type === 'typing') {
+            const authoritativeNick = this.playerNicks[pid] || msg.nick;
+            this.onPlayerTyping?.(authoritativeNick, msg.typing);
+            this.broadcastTyping(authoritativeNick, msg.typing);
+          }
+
           if (msg.type === 'input') {
             this.onRemoteInput?.(pid, {
               dx: msg.dx,
@@ -199,6 +206,10 @@ export class HostManager {
 
   broadcastChat(nick: string, message: string): void {
     this.sendToAll({ type: 'chat', nick, message });
+  }
+
+  broadcastTyping(nick: string, typing: boolean): void {
+    this.sendToAll({ type: 'typing', nick, typing });
   }
 
   private sendToAll(msg: NetworkMessage): void {

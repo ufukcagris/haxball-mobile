@@ -15,6 +15,8 @@ import { EndOverlay } from '@/components/game/overlays/EndOverlay';
 import { HUD_HEIGHT } from '@/config/constants';
 import { LobbyScreen } from './LobbyScreen';
 
+export let activeEngine: GameEngine | null = null;
+
 export function GameScreen() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<GameEngine | null>(null);
@@ -36,6 +38,7 @@ export function GameScreen() {
     }
     engineRef.current?.destroy();
     engineRef.current = null;
+    activeEngine = null;
     useGameStore.getState().reset();
     setScreen('lobby');
   }, [myRole, lobbyState, setScreen]);
@@ -176,6 +179,7 @@ export function GameScreen() {
 
     engine.start();
     engineRef.current = engine;
+    activeEngine = engine;
 
     const handleResize = () => {
       canvas.width = window.innerWidth;
@@ -188,6 +192,7 @@ export function GameScreen() {
       window.removeEventListener('resize', handleResize);
       engine.destroy();
       engineRef.current = null;
+      activeEngine = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, myRole, myPeerId, setLobbyState, setScreen, JSON.stringify(lobbyState.settings)]);
@@ -224,6 +229,7 @@ export function GameScreen() {
   const goMenu = () => {
     engineRef.current?.destroy();
     engineRef.current = null;
+    activeEngine = null;
     useGameStore.getState().reset();
     setScreen('menu');
   };

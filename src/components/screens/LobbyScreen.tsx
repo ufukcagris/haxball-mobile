@@ -6,9 +6,10 @@ import { PlayButton } from '@/components/ui/PlayButton';
 import { SelectorButton } from '@/components/ui/SelectorButton';
 import { getSharedHost, resetSharedHost } from './CreateRoomScreen';
 import { getSharedGuest } from './JoinRoomScreen';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Toast } from '@/components/ui/Toast';
 import { tryAutoFullscreen } from '@/utils/fullscreen';
+import { activeEngine } from './GameScreen';
 
 interface LobbyScreenProps {
   isOverlay?: boolean;
@@ -67,6 +68,25 @@ export function LobbyScreen({
   const isHost = myRole === 'host';
   const total = ls.red.length + ls.blue.length + ls.spec.length;
 
+  const triggerInGameBubble = useCallback((nick: string, message: string) => {
+    if (!activeEngine) return;
+    const all = [...ls.red, ...ls.blue, ...ls.spec];
+    const p = all.find(x => x.nick === nick);
+    if (p) {
+      activeEngine.triggerChatBubble(p.id, message);
+    }
+  }, [ls.red, ls.blue, ls.spec]);
+
+  const setTypingStatus = useCallback((isTyping: boolean) => {
+    const nick = config.nick;
+    if (isHost) {
+      getSharedHost()?.broadcastTyping(nick, isTyping);
+      if (activeEngine && myPeerId) activeEngine.setTyping(myPeerId, isTyping);
+    } else {
+      getSharedGuest()?.sendTyping(nick, isTyping);
+    }
+  }, [isHost, config.nick, myPeerId]);
+
   // Auto-scroll chat
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -94,7 +114,15 @@ export function LobbyScreen({
         guest.onLobbyUpdate = (state) => {
           setLobbyState(state);
         };
-        guest.onChatMessage = (nick, msg) => addChatMessage(nick, msg);
+        guest.onChatMessage = (nick, msg) => {
+          addChatMessage(nick, msg);
+          triggerInGameBubble(nick, msg);
+        };
+        guest.onPlayerTyping = (nick, typing) => {
+          if (!activeEngine) return;
+          const p = [...ls.red, ...ls.blue, ...ls.spec].find(x => x.nick === nick);
+          if (p) activeEngine.setTyping(p.id, typing);
+        };
         guest.onNickUpdate = (newNick) => {
           console.log('[LobbyScreen] Nick updated by host:', newNick);
           useAppStore.getState().setConfig({ nick: newNick });
@@ -103,10 +131,18 @@ export function LobbyScreen({
     } else {
       const host = getSharedHost();
       if (host) {
-        host.onChatMessage = (nick, msg) => addChatMessage(nick, msg);
+        host.onChatMessage = (nick, msg) => {
+          addChatMessage(nick, msg);
+          triggerInGameBubble(nick, msg);
+        };
+        host.onPlayerTyping = (nick, typing) => {
+          if (!activeEngine) return;
+          const p = [...ls.red, ...ls.blue, ...ls.spec].find(x => x.nick === nick);
+          if (p) activeEngine.setTyping(p.id, typing);
+        };
       }
     }
-  }, [isHost, setScreen, setLobbyState, isOverlay, addChatMessage]);
+  }, [isHost, setScreen, setLobbyState, isOverlay, addChatMessage, triggerInGameBubble, ls.red, ls.blue, ls.spec]);
 
   // Broadcast lobby changes when host modifies state
   useEffect(() => {
@@ -127,7 +163,6 @@ export function LobbyScreen({
     const msg = chatInput.trim();
     if (!msg) return;
 
-    // Use current nick from lobby instead of config.nick to ensure numbered nicks work
     let currentNick = config.nick;
     if (myPeerId) {
       const found = [...ls.red, ...ls.blue, ...ls.spec].find(p => p.id === myPeerId);
@@ -137,10 +172,12 @@ export function LobbyScreen({
     if (isHost) {
       getSharedHost()?.broadcastChat(currentNick, msg);
       addChatMessage(currentNick, msg);
+      triggerInGameBubble(currentNick, msg);
     } else {
       getSharedGuest()?.sendChat(currentNick, msg);
     }
     setChatInput('');
+    setTypingStatus(false); // Clear bubble on send
   };
 
   const onChatKeyDown = (e: React.KeyboardEvent) => {
@@ -483,6 +520,8 @@ export function LobbyScreen({
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={onChatKeyDown}
+              onFocus={() => setTypingStatus(true)}
+              onBlur={() => setTypingStatus(false)}
               placeholder='Mesaj yaz...'
               className='flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-[0.8rem] text-white focus:outline-none focus:border-(--accent)/50'
             />

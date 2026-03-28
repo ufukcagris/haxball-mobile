@@ -434,8 +434,14 @@ export class GameEngine {
       local.nick = rp.nick; // Sync nick
       local.team = rp.team; // Sync team
       local.isMe = isActuallyMe; // Ensure self-identification is always correct
-    });
 
+      // Sync chat bubble from network
+      if (rp.chatMessage) {
+        local.chatBubble = { message: rp.chatMessage, timer: rp.chatTimer || 0 };
+      } else {
+        local.chatBubble = undefined;
+      }
+    });
     if (msg.players.length < gs.players.length) {
       const hostPids = msg.players.map((p) => p.peerId);
       gs.players = gs.players.filter(
@@ -485,6 +491,26 @@ export class GameEngine {
       goalCooldown: gs.goalCooldown,
       kickoff: gs.kickoff,
     };
+  }
+
+  public setTyping(peerId: string, typing: boolean): void {
+    if (!this.gameState) return;
+    const p = this.gameState.players.find(x => x.peerId === peerId);
+    if (p) {
+      if (typing) {
+        p.chatBubble = { message: '...', timer: 999999 }; // Persist until manual off
+      } else {
+        p.chatBubble = undefined;
+      }
+    }
+  }
+
+  public triggerChatBubble(peerId: string, message: string): void {
+    if (!this.gameState) return;
+    const p = this.gameState.players.find(x => x.peerId === peerId);
+    if (p) {
+      p.chatBubble = { message, timer: 240 }; // 4 seconds at 60fps
+    }
   }
 
   private loop = (ts: number): void => {

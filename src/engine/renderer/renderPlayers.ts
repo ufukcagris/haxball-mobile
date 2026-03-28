@@ -96,6 +96,45 @@ export function renderPlayers(ctx: CanvasRenderingContext2D, gs: GameState): voi
       : (p.isHuman ? 'YOU' : 'BOT');
     ctx.fillText(displayNick, p.x, p.y);
 
+    // Chat Bubble (Typing Indicator)
+    if (p.chatBubble && p.chatBubble.timer > 0) {
+      const bw = 28 * gs.scale; // Compact fixed width
+      const bh = 18 * gs.scale; // Compact fixed height
+      const bx = p.x - bw / 2;
+      const by = p.y - p.r - bh - 8;
+
+      // Bubble BG
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      
+      ctx.beginPath();
+      // Use a safe check for roundRect which might not be in all TS lib versions
+      const canvasCtx = ctx as unknown as { roundRect?: (x: number, y: number, w: number, h: number, r: number) => void };
+      if (typeof canvasCtx.roundRect === 'function') {
+        canvasCtx.roundRect(bx, by, bw, bh, 4);
+      } else {
+        ctx.rect(bx, by, bw, bh);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      // Triangle tail
+      ctx.beginPath();
+      ctx.moveTo(p.x - 4, by + bh);
+      ctx.lineTo(p.x + 4, by + bh);
+      ctx.lineTo(p.x, by + bh + 5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Typing dots "..."
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${Math.max(10, p.r * 0.8)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('...', p.x, by + bh / 2 + 1);
+    }
+
     // Direction indicator
     const spd = Math.hypot(p.vx, p.vy);
     if (spd > 0.5) {

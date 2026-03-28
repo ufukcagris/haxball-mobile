@@ -26,6 +26,7 @@ export class GuestManager {
     null;
   public onLobbyReturn: ((state: LobbyState) => void) | null = null;
   public onChatMessage: ((nick: string, message: string) => void) | null = null;
+  public onPlayerTyping: ((nick: string, typing: boolean) => void) | null = null;
   public onNickUpdate: ((newNick: string) => void) | null = null;
   public onDisconnect: (() => void) | null = null;
   public onError: ((err: string) => void) | null = null;
@@ -78,6 +79,9 @@ export class GuestManager {
         case 'chat':
           this.onChatMessage?.(msg.nick, msg.message);
           break;
+        case 'typing':
+          this.onPlayerTyping?.(msg.nick, msg.typing);
+          break;
         case 'nick_update':
           this.onNickUpdate?.(msg.nick);
           break;
@@ -104,6 +108,15 @@ export class GuestManager {
     if (!this.hostConn) return;
     try {
       this.hostConn.send({ type: 'chat', nick, message });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  sendTyping(nick: string, typing: boolean): void {
+    if (!this.hostConn) return;
+    try {
+      this.hostConn.send({ type: 'typing', nick, typing });
     } catch {
       /* ignore */
     }
