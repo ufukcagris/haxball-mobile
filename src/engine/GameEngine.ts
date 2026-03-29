@@ -170,20 +170,21 @@ export class GameEngine {
       over: false,
       goalCooldown: 0,
       concededTeam: null,
-      timeLeft: this.config.time,
-      timerRunning: this.config.time > 0,
+      timeLeft: this.config.diff === 'none' ? 0 : this.config.time,
+      timerRunning: this.config.diff === 'none' ? false : this.config.time > 0,
       overtime: false,
       scoreRed: 0,
       scoreBlue: 0,
-      goalLimit: this.config.goalLimit || 0,
+      goalLimit: this.config.diff === 'none' ? 0 : (this.config.goalLimit || 0),
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
       players,
       input: { dx: 0, dy: 0, kick: false, kickCharge: 0, kickHeld: false },
       kickCharging: false,
       prevInputDir: null,
-      kickoff: { active: true, team: 'red' },
+      kickoff: { active: this.config.diff !== 'none', team: 'red' },
       isMulti: false,
+      isTraining: this.config.diff === 'none',
     };
     this.isMulti = false;
     this.keyboardInput.setGameState(this.gameState);
@@ -709,7 +710,7 @@ export class GameEngine {
       scoreBlue: gs.scoreBlue,
       timeLeft: gs.timeLeft,
       overtime: gs.overtime,
-      time: this.config.time,
+      time: gs.isTraining ? 0 : this.config.time,
     });
   }
 }

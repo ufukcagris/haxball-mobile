@@ -42,5 +42,5 @@ export function resetPositions(gs: GameState, teamToKickoff: 'red' | 'blue'): vo
   layoutTeam(redPlayers, 'red');
   layoutTeam(bluePlayers, 'blue');
 
-  gs.kickoff = { active: true, team: teamToKickoff };
+  gs.kickoff = { active: !gs.isTraining, team: teamToKickoff };
 }

@@ -100,6 +100,7 @@ export interface GameState {
 
   // Multi
   isMulti: boolean;
+  isTraining?: boolean;
 }
 
 export interface GameConfig {
