@@ -99,15 +99,16 @@ export function CreateRoomScreen() {
 
   return (
     <div
-      className="flex flex-col items-center justify-center overflow-y-auto px-3 py-6 gap-3 w-full h-full"
+      className="flex flex-col items-center overflow-y-auto w-full h-full"
       style={{
         background: 'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
       }}
     >
-      <div className="menu-bg" />
-      <div className="relative text-center z-1 mt-3">
+      <div className="menu-bg fixed inset-0" />
+      <div className="my-auto flex flex-col items-center gap-3 w-full shrink-0 px-3 py-6 z-1">
+        <div className="relative text-center mt-3">
         <div className="text-[clamp(1.2rem,4vw,2rem)] font-black"
           style={{
             background: 'linear-gradient(135deg, #00e5ff, #ffffff, #ff3d71)',
@@ -150,6 +151,7 @@ export function CreateRoomScreen() {
           ← Geri
         </PlayButton>
       </MenuCard>
+      </div>
     </div>
   );
 }

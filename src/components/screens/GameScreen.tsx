@@ -286,31 +286,33 @@ export function GameScreen() {
   if (showRoomClosed) {
     return (
       <div
-        className='flex flex-col items-center justify-center gap-6 w-full h-full'
+        className='flex flex-col items-center overflow-y-auto w-full h-full'
         style={{
           background:
             'radial-gradient(ellipse at 40% 30%, #400d0d 0%, #0a0e1a 70%)',
         }}
       >
-        <div className='menu-bg' />
-        <div className='text-[1.2rem] font-bold text-white z-10 text-center leading-tight'>
+        <div className='menu-bg fixed inset-0' />
+        <div className='my-auto flex flex-col items-center gap-6 w-full shrink-0 py-6 z-1'>
+          <div className='text-[1.2rem] font-bold text-white z-10 text-center leading-tight'>
           Baglanti Kesildi
           <br />
           <span className='text-[0.9rem] opacity-60 font-normal'>
             Oda kapatildi veya host ayrildi
           </span>
         </div>
-        <div className='flex flex-col gap-3 w-[240px] z-10'>
-          <PlayButton
-            onClick={() => {
-              resetLobby();
-              setScreen('menu');
-            }}
-            variant='secondary'
-            className='py-3!'
-          >
-            ANA MENUYE DON
-          </PlayButton>
+          <div className='flex flex-col gap-3 w-[240px] z-10'>
+            <PlayButton
+              onClick={() => {
+                resetLobby();
+                setScreen('menu');
+              }}
+              variant='secondary'
+              className='py-3!'
+            >
+              ANA MENUYE DON
+            </PlayButton>
+          </div>
         </div>
       </div>
     );

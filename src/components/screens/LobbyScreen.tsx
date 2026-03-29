@@ -313,27 +313,29 @@ export function LobbyScreen({
   if (showRoomClosed) {
     return (
       <div
-        className='flex flex-col items-center justify-center gap-6 w-full h-full'
+        className='flex flex-col items-center overflow-y-auto w-full h-full'
         style={{
           background: 'radial-gradient(ellipse at 40% 30%, #400d0d 0%, #0a0e1a 70%)',
         }}
       >
-        <div className='menu-bg' />
-        <div className='text-[1.2rem] font-bold text-white z-10 text-center leading-tight'>
+        <div className='menu-bg fixed inset-0' />
+        <div className='my-auto flex flex-col items-center gap-6 w-full shrink-0 py-6 z-1'>
+          <div className='text-[1.2rem] font-bold text-white z-10 text-center leading-tight'>
           Baglanti Kesildi<br/>
           <span className="text-[0.9rem] opacity-60 font-normal">Oda kapatildi veya host ayrildi</span>
         </div>
-        <div className='flex flex-col gap-3 w-[240px] z-10'>
-          <PlayButton 
-            onClick={() => {
-              resetLobby();
-              setScreen('menu');
-            }} 
-            variant="secondary" 
-            className="py-3!"
-          >
-            ANA MENUYE DON
-          </PlayButton>
+          <div className='flex flex-col gap-3 w-[240px] z-10'>
+            <PlayButton 
+              onClick={() => {
+                resetLobby();
+                setScreen('menu');
+              }} 
+              variant="secondary" 
+              className="py-3!"
+            >
+              ANA MENUYE DON
+            </PlayButton>
+          </div>
         </div>
       </div>
     );
@@ -342,29 +344,31 @@ export function LobbyScreen({
   if (showExitConfirm) {
     return (
       <div
-        className='flex flex-col items-center justify-center gap-6 w-full h-full'
+        className='flex flex-col items-center overflow-y-auto w-full h-full'
         style={{
           background:
             'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
         }}
       >
-        <div className='menu-bg' />
-        <div className='text-[1.2rem] font-bold text-white z-1 text-center leading-tight'>
+        <div className='menu-bg fixed inset-0' />
+        <div className='my-auto flex flex-col items-center gap-6 w-full shrink-0 py-6 z-1'>
+          <div className='text-[1.2rem] font-bold text-white z-1 text-center leading-tight'>
           Odadan ayrilmak istedigine
           <br />
           emin misin?
         </div>
-        <div className='flex flex-col gap-3 w-[240px] z-1'>
-          <PlayButton onClick={leaveLobby} variant='red' className='py-3!'>
-            EVET, AYRIL
-          </PlayButton>
-          <PlayButton
-            onClick={() => setShowExitConfirm(false)}
-            variant='secondary'
-            className='py-3!'
-          >
-            HAYIR, KAL
-          </PlayButton>
+          <div className='flex flex-col gap-3 w-[240px] z-1'>
+            <PlayButton onClick={leaveLobby} variant='red' className='py-3!'>
+              EVET, AYRIL
+            </PlayButton>
+            <PlayButton
+              onClick={() => setShowExitConfirm(false)}
+              variant='secondary'
+              className='py-3!'
+            >
+              HAYIR, KAL
+            </PlayButton>
+          </div>
         </div>
       </div>
     );
@@ -432,7 +436,7 @@ export function LobbyScreen({
 
   return (
     <div
-      className='flex flex-col items-center justify-center overflow-y-auto py-4 px-[6px] gap-3 w-full h-full'
+      className='flex flex-col items-center overflow-y-auto w-full h-full'
       style={{
         background:
           'radial-gradient(ellipse at 40% 30%, #0d2040 0%, #0a0e1a 70%)',
@@ -440,14 +444,14 @@ export function LobbyScreen({
         touchAction: 'pan-y',
       }}
     >
-      <div className='menu-bg' />
+      <div className='menu-bg fixed inset-0' />
       <Toast
         message={toast.message}
         visible={toast.visible}
         color='var(--accent)'
       />
 
-      <div className='w-[min(98vw,900px)] flex flex-col gap-3 shrink-0'>
+      <div className='my-auto w-[min(98vw,900px)] flex flex-col gap-3 shrink-0 py-4 px-[6px] z-1'>
         {/* Header */}
         <div className='flex items-center justify-between gap-2 z-1'>
           <div className='flex-1 min-w-0'>

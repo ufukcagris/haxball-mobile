@@ -44,17 +44,18 @@ export function MenuScreen() {
   return (
     <div
       id="menu-screen"
-      className="flex flex-col items-center justify-center overflow-y-auto px-3 pt-4 pb-5 gap-2.5 w-full h-full"
+      className="flex flex-col items-center overflow-y-auto w-full h-full"
       style={{
         background: 'radial-gradient(ellipse at 60% 20%, #0d2040 0%, #0a0e1a 70%)',
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
       }}
     >
-      <div className="menu-bg" />
+      <div className="menu-bg fixed inset-0" />
 
       {/* Logo */}
-      <div className="relative text-center z-1 shrink-0">
+      <div className="my-auto flex flex-col items-center gap-2.5 w-full shrink-0 px-3 py-5 z-1">
+        <div className="relative text-center shrink-0">
         <div
           className="text-[clamp(1.4rem,4vw,2.8rem)] font-black tracking-tight leading-none"
           style={{
@@ -158,6 +159,7 @@ export function MenuScreen() {
           👥 ARKADASLA OYNA
         </PlayButton>
       </MenuCard>
+      </div>
     </div>
   );
 }
