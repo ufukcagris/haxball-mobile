@@ -18,10 +18,27 @@ export function toggleFullscreen(): void {
       el.requestFullscreen ||
       el.webkitRequestFullscreen ||
       el.mozRequestFullScreen;
-    if (req) req.call(el, { navigationUI: 'hide' });
+    if (req) {
+      req.call(el, { navigationUI: 'hide' }).then(() => {
+        try {
+          if (screen.orientation && 'lock' in screen.orientation) {
+            (screen.orientation.lock as (orientation: string) => Promise<void>)('landscape').catch(() => {});
+          }
+        } catch {
+          // ignore
+        }
+      }).catch(() => {});
+    }
   } else {
+    try {
+      if (screen.orientation && 'unlock' in screen.orientation) {
+        screen.orientation.unlock();
+      }
+    } catch {
+      // ignore
+    }
     const ex = doc.exitFullscreen || doc.webkitExitFullscreen;
-    if (ex) ex.call(doc);
+    if (ex) ex.call(doc).catch(() => {});
   }
 }
 
@@ -33,6 +50,14 @@ export function tryAutoFullscreen(): void {
     el.webkitRequestFullscreen ||
     el.mozRequestFullScreen;
   if (req && !doc.fullscreenElement && !doc.webkitFullscreenElement) {
-    req.call(el, { navigationUI: 'hide' }).catch(() => {});
+    req.call(el, { navigationUI: 'hide' }).then(() => {
+      try {
+        if (screen.orientation && 'lock' in screen.orientation) {
+          (screen.orientation.lock as (orientation: string) => Promise<void>)('landscape').catch(() => {});
+        }
+      } catch {
+        // ignore
+      }
+    }).catch(() => {});
   }
 }

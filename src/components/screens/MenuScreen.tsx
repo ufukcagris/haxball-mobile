@@ -1,16 +1,36 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useLobbyStore } from '@/stores/useLobbyStore';
 import { MenuCard } from '@/components/ui/MenuCard';
 import { FieldInput } from '@/components/ui/FieldInput';
 import { SelectorButton } from '@/components/ui/SelectorButton';
 import { PlayButton } from '@/components/ui/PlayButton';
+import { toggleFullscreen } from '@/utils/fullscreen';
 import type { PitchSize } from '@/config/pitchConfigs';
 import type { BotDifficulty } from '@/config/botDifficulty';
 
 export function MenuScreen() {
   const { config, setConfig, setScreen } = useAppStore();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFsChange = () => {
+      const doc = document as Document & { webkitFullscreenElement?: Element };
+      setIsFullscreen(!!(doc.fullscreenElement || doc.webkitFullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+
+    onFsChange();
+
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
+    };
+  }, []);
 
   const pitchOptions: { value: PitchSize; icon: string; label: string }[] = [
     { value: 'small', icon: '🏟️', label: 'Kucuk' },
@@ -164,6 +184,16 @@ export function MenuScreen() {
             👥 ARKADASLA OYNA
           </PlayButton>
         </div>
+        <button
+          onClick={toggleFullscreen}
+          className="mt-3 w-full py-2 bg-white/5 border border-white/10 rounded-lg text-white/50 text-[0.7rem] uppercase tracking-[2px] font-bold hover:bg-white/10 active:scale-95 transition-all text-center cursor-pointer"
+        >
+          {isFullscreen ? (
+            "⛶ Tam Ekrandan Cik"
+          ) : (
+            <>⛶ Tam Ekrana Gec <span className="hidden max-md:portrait:inline">(Yatay)</span></>
+          )}
+        </button>
       </MenuCard>
       </div>
     </div>
