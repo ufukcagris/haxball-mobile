@@ -8,11 +8,12 @@ interface FieldInputProps {
   maxLength?: number;
   mono?: boolean;
   className?: string;
+  wrapperClassName?: string;
 }
 
-export function FieldInput({ label, value, onChange, placeholder, maxLength, mono, className = '' }: FieldInputProps) {
+export function FieldInput({ label, value, onChange, placeholder, maxLength, mono, className = '', wrapperClassName = '' }: FieldInputProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={`flex flex-col gap-1 ${wrapperClassName}`}>
       <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
         {label}
       </div>

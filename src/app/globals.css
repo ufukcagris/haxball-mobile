@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;900&family=Share+Tech+Mono&display=swap');
 @import "tailwindcss";
 
+@custom-variant mobile-landscape (@media (orientation: landscape) and (max-height: 600px));
+
 @layer base {
   * {
     margin: 0;

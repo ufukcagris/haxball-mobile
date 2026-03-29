@@ -3,7 +3,7 @@
 import { useGameStore } from '@/stores/useGameStore';
 import { toggleFullscreen } from '@/utils/fullscreen';
 
-export function HUD() {
+export function HUD({ onPause }: { onPause?: () => void }) {
   const { scoreRed, scoreBlue, timeLeft, overtime, time } =
     useGameStore();
 
@@ -56,6 +56,7 @@ export function HUD() {
         </div>
         <div className="flex gap-1 mt-0.5">
           <button
+            onClick={onPause}
             className="bg-transparent border-[1.5px] border-(--border) rounded-[7px] text-(--text-dim)
               cursor-pointer text-[0.8rem] py-[3px] px-2 font-['Exo_2',sans-serif] font-bold"
             style={{ touchAction: 'manipulation' }}

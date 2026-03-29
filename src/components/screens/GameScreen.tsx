@@ -91,18 +91,20 @@ export function GameScreen() {
       }, 3000);
     };
 
+    const togglePause = () => {
+      const currentlyPaused = useGameStore.getState().paused;
+      if (!currentlyPaused) {
+        useGameStore.getState().setPaused(true);
+        if (myRole === 'solo') engineRef.current?.pause();
+      } else {
+        useGameStore.getState().setPaused(false);
+        useGameStore.getState().setShowFullLobby(false);
+        engineRef.current?.resume();
+      }
+    };
+
     engine.keyboardInput.attach(
-      () => {
-        const currentlyPaused = useGameStore.getState().paused;
-        if (!currentlyPaused) {
-          useGameStore.getState().setPaused(true);
-          if (myRole === 'solo') engine.pause();
-        } else {
-          useGameStore.getState().setPaused(false);
-          useGameStore.getState().setShowFullLobby(false);
-          if (myRole === 'solo') engine.resume();
-        }
-      },
+      togglePause,
       () => engine.getLocalPlayer(),
     );
     engine.keyboardInput.setGameState(engine.getState());
@@ -269,6 +271,18 @@ export function GameScreen() {
     }
   }, [lobbyState, screen, myRole]);
 
+  const togglePauseFromHUD = useCallback(() => {
+    const currentlyPaused = useGameStore.getState().paused;
+    if (!currentlyPaused) {
+      setPaused(true);
+      if (myRole === 'solo') engineRef.current?.pause();
+    } else {
+      setPaused(false);
+      setShowFullLobby(false);
+      engineRef.current?.resume();
+    }
+  }, [myRole, setPaused, setShowFullLobby]);
+
   const resumeGame = () => {
     setPaused(false);
     setShowFullLobby(false);
@@ -323,7 +337,7 @@ export function GameScreen() {
       className='bg-black flex flex-col overflow-hidden w-full h-full'
       style={{ touchAction: 'none' }}
     >
-      <HUD />
+      <HUD onPause={togglePauseFromHUD} />
 
       <div
         className='absolute left-0 right-0 bottom-0 flex items-center justify-center overflow-hidden'

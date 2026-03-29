@@ -5,7 +5,11 @@ const config: Config = {
     './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      screens: {
+        'mobile-landscape': { 'raw': '(orientation: landscape) and (max-height: 600px)' },
+      }
+    },
   },
   plugins: [],
 };

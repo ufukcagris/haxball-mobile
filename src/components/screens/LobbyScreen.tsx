@@ -43,6 +43,18 @@ export function LobbyScreen({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showRoomClosed, setShowRoomClosed] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const floatingChatScrollRef = useRef<HTMLDivElement>(null);
+
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [lastReadCount, setLastReadCount] = useState(chatMessages.length);
+
+  const unreadCount = isChatOpen ? 0 : Math.max(0, chatMessages.length - lastReadCount);
+
+  const handleToggleChat = (open: boolean) => {
+    setIsChatOpen(open);
+    setLastReadCount(chatMessages.length);
+  };
 
   const colors = [
     '#00e5ff',
@@ -100,7 +112,32 @@ export function LobbyScreen({
     if (chatScrollRef.current) {
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
-  }, [chatMessages]);
+    if (floatingChatScrollRef.current) {
+      floatingChatScrollRef.current.scrollTop = floatingChatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages, isChatOpen]);
+
+  // Track unread messages using generic render variable instead of effect
+
+  // Listen to visualViewport for mobile virtual keyboard positioning
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    const updateKbd = () => {
+      const vV = window.visualViewport;
+      if (!vV) return;
+      
+      const vh = vV.height;
+      const h = window.innerHeight;
+      if (h - vh > 50) {
+        setKeyboardHeight(h - vh);
+      } else {
+        setKeyboardHeight(0);
+      }
+    };
+    window.visualViewport.addEventListener('resize', updateKbd);
+    updateKbd();
+    return () => window.visualViewport?.removeEventListener('resize', updateKbd);
+  }, []);
 
   // Local welcome message
   useEffect(() => {
@@ -478,78 +515,82 @@ export function LobbyScreen({
           </div>
         </div>
 
-        {/* Teams */}
-        <div className='grid grid-cols-3 gap-1.5 z-1'>
-          {renderTeam('red', '🔴 Kirmizi', 'rgba(255,61,113,0.3)')}
-          {renderTeam('spec', '👁 Izleyici', 'rgba(100,116,139,0.3)')}
-          {renderTeam('blue', '🔵 Mavi', 'rgba(0,229,255,0.3)')}
+        {/* Teams and Settings Wrapper */}
+        <div className='flex flex-col mobile-landscape:flex-row gap-3 z-1'>
+          
+          {/* Teams */}
+          <div className='grid grid-cols-3 gap-1.5 flex-1'>
+            {renderTeam('red', '🔴 Kirmizi', 'rgba(255,61,113,0.3)')}
+            {renderTeam('spec', '👁 Izleyici', 'rgba(100,116,139,0.3)')}
+            {renderTeam('blue', '🔵 Mavi', 'rgba(0,229,255,0.3)')}
+          </div>
+
+          {/* Settings */}
+          <div
+            className='bg-[rgba(17,24,39,0.75)] rounded-[14px] p-2.5 grid grid-cols-3 mobile-landscape:flex mobile-landscape:flex-col mobile-landscape:justify-center gap-[clamp(5px,1vh,10px)] shrink-0 mobile-landscape:w-[210px]'
+            style={{ pointerEvents: isHost ? 'all' : 'none' }}
+          >
+            <div className='flex flex-col gap-1'>
+              <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
+                Saha
+              </div>
+              <div className='flex gap-[3px] flex-wrap'>
+                {(['small', 'medium', 'large'] as const).map((v) => (
+                  <SelectorButton
+                    key={v}
+                    active={ls.settings.pitch === v}
+                    onClick={() => setSetting('pitch', v)}
+                    className='text-[clamp(0.6rem,1.2vw,0.7rem)] py-[clamp(4px,0.8vh,6px)] border-[1.5px]! rounded-[7px]! min-w-[28px]'
+                  >
+                    {v === 'small' ? 'Kucuk' : v === 'medium' ? 'Orta' : 'Buyuk'}
+                  </SelectorButton>
+                ))}
+              </div>
+            </div>
+            <div className='flex flex-col gap-1'>
+              <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
+                Sure
+              </div>
+              <div className='flex gap-[3px] flex-wrap'>
+                {[
+                  { v: 120, l: '2dk' },
+                  { v: 180, l: '3dk' },
+                  { v: 300, l: '5dk' },
+                  { v: 0, l: '∞' },
+                ].map((t) => (
+                  <SelectorButton
+                    key={t.v}
+                    active={ls.settings.time === t.v}
+                    onClick={() => setSetting('time', t.v)}
+                    className='text-[clamp(0.6rem,1.2vw,0.7rem)] py-[clamp(4px,0.8vh,6px)] border-[1.5px]! rounded-[7px]! min-w-[28px]'
+                  >
+                    {t.l}
+                  </SelectorButton>
+                ))}
+              </div>
+            </div>
+            <div className='flex flex-col gap-1'>
+              <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
+                Gol
+              </div>
+              <div className='flex gap-[3px] flex-wrap'>
+                {[1, 3, 5, 0].map((g) => (
+                  <SelectorButton
+                    key={g}
+                    active={ls.settings.goals === g}
+                    onClick={() => setSetting('goals', g)}
+                    className='text-[clamp(0.6rem,1.2vw,0.7rem)] py-[clamp(4px,0.8vh,6px)] border-[1.5px]! rounded-[7px]! min-w-[28px]'
+                  >
+                    {g === 0 ? '∞' : g}
+                  </SelectorButton>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Settings */}
-        <div
-          className='bg-[rgba(17,24,39,0.75)] rounded-[14px] p-2.5 grid grid-cols-3 gap-2 z-1'
-          style={{ pointerEvents: isHost ? 'all' : 'none' }}
-        >
-          <div className='flex flex-col gap-1'>
-            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
-              Saha
-            </div>
-            <div className='flex gap-1 flex-wrap'>
-              {(['small', 'medium', 'large'] as const).map((v) => (
-                <SelectorButton
-                  key={v}
-                  active={ls.settings.pitch === v}
-                  onClick={() => setSetting('pitch', v)}
-                  className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'
-                >
-                  {v === 'small' ? 'Kucuk' : v === 'medium' ? 'Orta' : 'Buyuk'}
-                </SelectorButton>
-              ))}
-            </div>
-          </div>
-          <div className='flex flex-col gap-1'>
-            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
-              Sure
-            </div>
-            <div className='flex gap-1 flex-wrap'>
-              {[
-                { v: 120, l: '2dk' },
-                { v: 180, l: '3dk' },
-                { v: 300, l: '5dk' },
-                { v: 0, l: '∞' },
-              ].map((t) => (
-                <SelectorButton
-                  key={t.v}
-                  active={ls.settings.time === t.v}
-                  onClick={() => setSetting('time', t.v)}
-                  className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'
-                >
-                  {t.l}
-                </SelectorButton>
-              ))}
-            </div>
-          </div>
-          <div className='flex flex-col gap-1'>
-            <div className='text-[0.58rem] font-bold tracking-[2px] uppercase text-(--text-dim)'>
-              Gol
-            </div>
-            <div className='flex gap-1 flex-wrap'>
-              {[1, 3, 5, 0].map((g) => (
-                <SelectorButton
-                  key={g}
-                  active={ls.settings.goals === g}
-                  onClick={() => setSetting('goals', g)}
-                  className='text-[0.7rem] py-[5px] border-[1.5px]! rounded-[7px]! min-w-[32px]'
-                >
-                  {g === 0 ? '∞' : g}
-                </SelectorButton>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Chat Area */}
-        <div className='h-[160px] flex flex-col bg-[rgba(17,24,39,0.75)] rounded-[14px] border border-white/5 overflow-hidden shrink-0'>
+        {/* Chat Area (Inline for Portrait & Desktop) */}
+        <div className='h-[160px] flex mobile-landscape:hidden flex-col bg-[rgba(17,24,39,0.75)] rounded-[14px] border border-white/5 overflow-hidden shrink-0'>
           <div
             className='flex-1 overflow-y-auto p-2 space-y-1.5'
             ref={chatScrollRef}
@@ -643,6 +684,68 @@ export function LobbyScreen({
           )}
         </div>
       </div>
+
+      {/* Floating Chat Button (Landscape Only) */}
+      <button
+        onClick={() => handleToggleChat(true)}
+        className='hidden mobile-landscape:flex fixed bottom-5 left-5 z-99 bg-[#1a2235] border-2 border-[rgba(0,229,255,0.4)]
+                   rounded-full w-[clamp(50px,6vh,60px)] h-[clamp(50px,6vh,60px)] items-center justify-center text-[1.4rem] shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-all
+                   active:scale-95 hover:border-[#00e5ff] group'
+        style={{ pointerEvents: 'auto' }}
+      >
+        💬
+        {unreadCount > 0 && (
+          <div className='absolute -top-1 -right-1 bg-[#ff3d71] text-white text-[0.65rem] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#1a2235] z-10'>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </div>
+        )}
+      </button>
+
+      {/* Floating Chat Overlay (Landscape Only) */}
+      {isChatOpen && (
+        <div 
+          className='hidden mobile-landscape:flex fixed inset-0 z-100 items-end justify-start p-4 pointer-events-none'
+          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 10 : 16 }}
+        >
+          <div className='pointer-events-auto w-[clamp(320px,40vw,450px)] h-[calc(100vh-100px)] max-h-[350px] bg-[rgba(17,24,39,0.92)] backdrop-blur-md rounded-[16px] border border-white/10 shadow-[0_10px_60px_rgba(0,0,0,0.8)] flex flex-col transition-all duration-200'>
+            <div className='flex items-center justify-between p-2.5 border-b border-white/5 bg-black/20 shrink-0'>
+              <span className='text-[0.65rem] font-black uppercase tracking-[2px] text-[#64748b] pl-1'>Sohbet</span>
+              <button onClick={() => handleToggleChat(false)} className='text-[#64748b] hover:text-white px-2 py-0.5 text-lg leading-none active:scale-90 transition-colors'>&times;</button>
+            </div>
+            
+            <div className='flex-1 overflow-y-auto p-2.5 space-y-2' ref={floatingChatScrollRef} style={{ WebkitOverflowScrolling: 'touch' }}>
+              {chatMessages.length === 0 && (
+                <div className='h-full flex items-center justify-center text-[#64748b] text-[0.65rem] italic opacity-50 uppercase tracking-widest'>Sohbet baslasin...</div>
+              )}
+              {chatMessages.map((m) => (
+                <div key={m.id} className='text-[0.75rem] leading-tight break-all'>
+                  <span className='font-black mr-1.5' style={{ color: getNickColor(m.nick) }}>[{m.nick}]:</span>
+                  <span className='text-white/90'>{m.message}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className='p-2 bg-black/30 border-t border-white/5 flex gap-2 shrink-0'>
+              <input
+                type='text'
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={onChatKeyDown}
+                onFocus={() => setTypingStatus(true)}
+                onBlur={() => setTypingStatus(false)}
+                placeholder='Mesaj yaz...'
+                className='flex-1 bg-white/5 border border-white/10 rounded-[10px] px-3 py-2 text-[0.8rem] text-white focus:outline-none focus:border-[#00e5ff]/50 transition-colors'
+              />
+              <button
+                onClick={sendChat}
+                className='bg-[#00e5ff] text-black text-[0.7rem] font-black px-4 rounded-[10px] active:scale-95 transition-transform uppercase'
+              >
+                Gonder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

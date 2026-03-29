@@ -106,8 +106,8 @@ export function JoinRoomScreen() {
       }}
     >
       <div className='menu-bg fixed inset-0' />
-      <div className='my-auto flex flex-col items-center gap-3 w-full shrink-0 px-3 py-6 z-1'>
-        <div className='relative text-center mt-3'>
+      <div className='my-auto flex flex-col mobile-landscape:flex-row items-center justify-center gap-[clamp(10px,4vw,30px)] w-full shrink-0 px-3 py-6 z-1'>
+        <div className='relative text-center shrink-0 mobile-landscape:scale-90'>
         <div
           className='text-[clamp(1.2rem,4vw,2rem)] font-black'
           style={{
@@ -121,7 +121,9 @@ export function JoinRoomScreen() {
         </div>
       </div>
 
-      <MenuCard className='w-[min(460px,96vw)]'>
+      <MenuCard className='w-[min(460px,96vw)] mobile-landscape:w-[480px]'>
+        <div className="flex flex-col mobile-landscape:grid mobile-landscape:grid-cols-2 gap-[clamp(7px,1.4vh,12px)] mobile-landscape:gap-4">
+          <div className="flex flex-col gap-[clamp(7px,1.4vh,12px)] mobile-landscape:gap-3">
         <FieldInput
           label='Oda Kodu'
           value={code}
@@ -137,6 +139,9 @@ export function JoinRoomScreen() {
         >
           {status}
         </div>
+        </div>
+
+        <div className="flex flex-col gap-[clamp(7px,1.4vh,12px)] mobile-landscape:gap-3">
 
         <PlayButton onClick={joinRoom} disabled={!ready} className='w-full'>
           🚀 KATIL
@@ -148,6 +153,8 @@ export function JoinRoomScreen() {
         >
           ← Geri
         </PlayButton>
+        </div>
+        </div>
       </MenuCard>
       </div>
     </div>

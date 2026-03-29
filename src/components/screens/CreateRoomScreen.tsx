@@ -107,8 +107,8 @@ export function CreateRoomScreen() {
       }}
     >
       <div className="menu-bg fixed inset-0" />
-      <div className="my-auto flex flex-col items-center gap-3 w-full shrink-0 px-3 py-6 z-1">
-        <div className="relative text-center mt-3">
+      <div className="my-auto flex flex-col mobile-landscape:flex-row items-center justify-center gap-[clamp(10px,4vw,30px)] w-full shrink-0 px-3 py-6 z-1">
+        <div className="relative text-center shrink-0 mobile-landscape:scale-90">
         <div className="text-[clamp(1.2rem,4vw,2rem)] font-black"
           style={{
             background: 'linear-gradient(135deg, #00e5ff, #ffffff, #ff3d71)',
@@ -119,7 +119,9 @@ export function CreateRoomScreen() {
         </div>
       </div>
 
-      <MenuCard className="w-[min(460px,96vw)]">
+      <MenuCard className="w-[min(460px,96vw)] mobile-landscape:w-[480px]">
+        <div className="flex flex-col mobile-landscape:grid mobile-landscape:grid-cols-2 gap-[clamp(7px,1.4vh,12px)] mobile-landscape:gap-4">
+          <div className="flex flex-col gap-[clamp(7px,1.4vh,12px)] mobile-landscape:gap-3">
         <FieldInput label="Oda Adi" value={roomName} onChange={setRoomName} placeholder="Oda adi..." maxLength={20} />
 
         <div className="flex flex-col gap-1">
@@ -140,16 +142,20 @@ export function CreateRoomScreen() {
         >
           {status}
         </div>
+        </div>
 
-        <PlayButton onClick={createRoom} disabled={!ready} className="w-full">
-          🏟️ ODA OLUSTUR
-        </PlayButton>
-        <PlayButton onClick={() => setScreen('join')} variant="purple" className="w-full">
-          🚀 ODAYA KATIL
-        </PlayButton>
-        <PlayButton onClick={() => setScreen('menu')} variant="secondary" className="w-full">
-          ← Geri
-        </PlayButton>
+        <div className="flex flex-col gap-[clamp(7px,1.4vh,12px)] mobile-landscape:gap-3">
+          <PlayButton onClick={createRoom} disabled={!ready} className="w-full">
+            🏟️ ODA OLUSTUR
+          </PlayButton>
+          <PlayButton onClick={() => setScreen('join')} variant="purple" className="w-full">
+            🚀 ODAYA KATIL
+          </PlayButton>
+          <PlayButton onClick={() => setScreen('menu')} variant="secondary" className="w-full">
+            ← Geri
+          </PlayButton>
+        </div>
+        </div>
       </MenuCard>
       </div>
     </div>

@@ -54,8 +54,8 @@ export function MenuScreen() {
       <div className="menu-bg fixed inset-0" />
 
       {/* Logo */}
-      <div className="my-auto flex flex-col items-center gap-2.5 w-full shrink-0 px-3 py-5 z-1">
-        <div className="relative text-center shrink-0">
+      <div className="my-auto flex flex-col mobile-landscape:flex-row items-center justify-center gap-[clamp(10px,4vw,30px)] w-full shrink-0 px-3 py-5 z-1">
+        <div className="relative text-center shrink-0 mobile-landscape:scale-90">
         <div
           className="text-[clamp(1.4rem,4vw,2.8rem)] font-black tracking-tight leading-none"
           style={{
@@ -73,22 +73,25 @@ export function MenuScreen() {
         </div>
       </div>
 
-      <MenuCard>
-        {/* Nick */}
-        <FieldInput
-          label="Kullanici Adi"
-          value={config.nick}
-          onChange={(v) => setConfig({ nick: v })}
-          placeholder="Adini gir..."
-          maxLength={16}
-        />
+      <MenuCard className="mobile-landscape:w-[500px]">
+        <div className="flex flex-col gap-[clamp(7px,1.4vh,12px)] mobile-landscape:grid mobile-landscape:grid-rows-[auto_auto] mobile-landscape:grid-flow-col mobile-landscape:grid-cols-2 mobile-landscape:gap-x-4 mobile-landscape:gap-y-[clamp(8px,1.5vh,16px)]">
+            {/* Nick */}
+            <FieldInput
+              label="Kullanici Adi"
+              value={config.nick}
+              onChange={(v) => setConfig({ nick: v })}
+              placeholder="Adini gir..."
+              maxLength={16}
+              wrapperClassName="mobile-landscape:h-full"
+              className="mobile-landscape:h-full"
+            />
 
         {/* Pitch Size */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 mobile-landscape:h-full">
           <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
             Saha Boyutu
           </div>
-          <div className="grid grid-cols-3 gap-[7px]">
+          <div className="grid grid-cols-3 gap-[7px] mobile-landscape:flex-1">
             {pitchOptions.map((p) => (
               <button
                 key={p.value}
@@ -113,18 +116,19 @@ export function MenuScreen() {
           </div>
         </div>
 
-        {/* Match Time */}
-        <div className="flex flex-col gap-1">
-          <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
-            Mac Suresi
+          {/* Match Time */}
+          <div className="flex flex-col gap-1 mobile-landscape:h-full">
+            <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
+              Mac Suresi
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 w-full mobile-landscape:flex-1">
             {timeOptions.map((t) => (
               <SelectorButton
                 key={t.value}
                 active={config.time === t.value}
                 onClick={() => setConfig({ time: t.value })}
                 color="yellow"
+                className="flex-1 mobile-landscape:h-full"
               >
                 {t.label}
               </SelectorButton>
@@ -133,31 +137,33 @@ export function MenuScreen() {
         </div>
 
         {/* Difficulty */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 mobile-landscape:h-full">
           <div className="text-[0.65rem] font-bold tracking-[2px] uppercase text-(--accent) opacity-80">
             Rakip
           </div>
-          <div className="flex gap-[5px] flex-nowrap">
+          <div className="flex gap-[5px] flex-nowrap w-full mobile-landscape:flex-1">
             {diffOptions.map((d) => (
               <SelectorButton
                 key={d.value}
                 active={config.diff === d.value}
                 onClick={() => setConfig({ diff: d.value })}
                 color="green"
-                className="text-[0.68rem] whitespace-nowrap"
+                className="flex-1 text-[clamp(0.55rem,1.2vw,0.68rem)] whitespace-nowrap mobile-landscape:py-2.5 shrink"
               >
                 {d.label}
               </SelectorButton>
             ))}
           </div>
         </div>
-
-        <PlayButton onClick={startSoloGame} className="w-full mb-1.5">
-          ⚽ BOTA KARSI OYNA
-        </PlayButton>
-        <PlayButton onClick={startMultiplayer} variant="red" className="w-full">
-          👥 ARKADASLA OYNA
-        </PlayButton>
+        </div>
+        <div className="flex flex-col mobile-landscape:flex-row gap-[clamp(7px,1.4vh,12px)] mobile-landscape:gap-3 mobile-landscape:mt-1">
+          <PlayButton onClick={startSoloGame} className="w-full">
+            ⚽ BOTA KARSI OYNA
+          </PlayButton>
+          <PlayButton onClick={startMultiplayer} variant="red" className="w-full">
+            👥 ARKADASLA OYNA
+          </PlayButton>
+        </div>
       </MenuCard>
       </div>
     </div>
