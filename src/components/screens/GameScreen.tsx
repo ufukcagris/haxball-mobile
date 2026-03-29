@@ -357,18 +357,7 @@ export function GameScreen() {
       <div ref={goalFlashRef} className='goal-flash' />
       <JoystickZone zoneRef={zoneRef} jBaseRef={jBaseRef} jKnobRef={jKnobRef} />
 
-      <div
-        className='absolute bottom-0 right-0 pointer-events-none z-31'
-        style={{
-          top: `${HUD_HEIGHT}px`,
-          width: '33.33%',
-          borderLeft: '1px solid rgba(255,200,0,0.12)',
-        }}
-      >
-        <span className='absolute bottom-7 left-1/2 -translate-x-1/2 text-[1.2rem] opacity-18'>
-          ⚡
-        </span>
-      </div>
+
 
       {!showFullLobby && (
         <PauseOverlay
