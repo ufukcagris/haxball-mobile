@@ -15,6 +15,7 @@ import { EndOverlay } from '@/components/game/overlays/EndOverlay';
 import { HUD_HEIGHT } from '@/config/constants';
 import { LobbyScreen } from './LobbyScreen';
 import { PlayButton } from '../ui/PlayButton';
+import { tryAutoFullscreen } from '@/utils/fullscreen';
 
 export let activeEngine: GameEngine | null = null;
 
@@ -214,11 +215,18 @@ export function GameScreen() {
       canvas.width = window.innerWidth;
       canvas.height = Math.max(window.innerHeight - HUD_HEIGHT, 100);
       engine.resize();
+      
+      if (window.innerWidth > window.innerHeight) {
+        tryAutoFullscreen();
+      }
     };
+    
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
       engine.destroy();
       engineRef.current = null;
       activeEngine = null;
