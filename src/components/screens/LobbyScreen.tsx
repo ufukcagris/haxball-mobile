@@ -418,7 +418,7 @@ export function LobbyScreen({
   ) => (
     <div
       onClick={() => dropSelected(team)}
-      className={`bg-[rgba(17,24,39,0.75)] rounded-[14px] py-2 px-[6px] flex flex-col gap-[5px] min-h-[260px]
+      className={`bg-[rgba(17,24,39,0.75)] rounded-[14px] py-2 px-[6px] flex flex-col gap-[5px] min-h-[260px] mobile-landscape:min-h-[140px]
         border-[1.5px] cursor-pointer transition-all duration-200`}
       style={{ borderColor }}
     >
