@@ -6,7 +6,6 @@ import { MenuCard } from '@/components/ui/MenuCard';
 import { FieldInput } from '@/components/ui/FieldInput';
 import { SelectorButton } from '@/components/ui/SelectorButton';
 import { PlayButton } from '@/components/ui/PlayButton';
-import { tryAutoFullscreen } from '@/utils/fullscreen';
 import type { PitchSize } from '@/config/pitchConfigs';
 import type { BotDifficulty } from '@/config/botDifficulty';
 
@@ -35,7 +34,6 @@ export function MenuScreen() {
 
   const startSoloGame = () => {
     useLobbyStore.getState().resetLobby();
-    tryAutoFullscreen();
     setScreen('game');
   };
 

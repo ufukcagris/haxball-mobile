@@ -8,7 +8,6 @@ import { getSharedHost, resetSharedHost } from './CreateRoomScreen';
 import { getSharedGuest } from './JoinRoomScreen';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Toast } from '@/components/ui/Toast';
-import { tryAutoFullscreen } from '@/utils/fullscreen';
 import { activeEngine } from './GameScreen';
 
 interface LobbyScreenProps {
@@ -330,7 +329,6 @@ export function LobbyScreen({
       })),
     ];
     getSharedHost()?.broadcastGameStart(players, ls.settings);
-    tryAutoFullscreen();
     setScreen('game');
   };
 
