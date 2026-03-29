@@ -39,14 +39,18 @@ export function PauseOverlay({ onResume, onMenu, onLobby }: PauseOverlayProps) {
           
           <div className="flex flex-col gap-3 w-[220px]">
             <OverlayButton onClick={onResume}>DEVAM ET</OverlayButton>
-            {onLobby && (
+            {onLobby && myRole !== 'solo' && (
               <OverlayButton onClick={onLobby} className="border-(--yellow)! text-(--yellow)!">LOBIYI AC</OverlayButton>
             )}
             <OverlayButton onClick={() => setShowConfirmExit(true)} variant="secondary">OYUNDAN CIK</OverlayButton>
           </div>
 
-          <div className="mt-8 text-[0.6rem] text-white/40 uppercase tracking-[2px] font-bold">Takimlar</div>
-          <IngameLobbyOverlay />
+          {myRole !== 'solo' && (
+            <>
+              <div className="mt-8 text-[0.6rem] text-white/40 uppercase tracking-[2px] font-bold">Takimlar</div>
+              <IngameLobbyOverlay />
+            </>
+          )}
 
           {myRole === 'host' && (
             <div className="mt-4 text-[0.65rem] text-(--yellow) opacity-60">

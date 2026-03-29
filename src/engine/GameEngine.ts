@@ -145,9 +145,9 @@ export class GameEngine {
     const pr = PLAYER_RADIUS * scale;
     const br = BALL_RADIUS * scale;
 
-    const players: PlayerState[] = [
-      createPlayer(ox + fw * 0.28, oy + fh / 2, pr, 'red', true),
-    ];
+    const p1 = createPlayer(ox + fw * 0.28, oy + fh / 2, pr, 'red', true);
+    p1.isMe = true;
+    const players: PlayerState[] = [p1];
     if (this.config.diff !== 'none') {
       players.push(
         createPlayer(ox + fw * 0.72, oy + fh / 2, pr, 'blue', false),

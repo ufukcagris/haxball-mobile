@@ -1,9 +1,11 @@
 'use client';
 
 import { useGameStore } from '@/stores/useGameStore';
+import { useLobbyStore } from '@/stores/useLobbyStore';
 
 export function EndOverlay() {
   const { showEndOverlay, scoreRed, scoreBlue } = useGameStore();
+  const myRole = useLobbyStore((s) => s.myRole);
 
   if (!showEndOverlay) return null;
 
@@ -64,9 +66,9 @@ export function EndOverlay() {
       </div>
 
       <div className="mt-16 flex items-center gap-3 text-[0.75rem] text-white/40 tracking-[3px] uppercase">
-        <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/20"></div>
-        Lobiye donuluyor
-        <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/20"></div>
+        <div className="w-12 h-px bg-linear-to-r from-transparent to-white/20"></div>
+        {myRole === 'solo' ? 'Menuye donuluyor' : 'Lobiye donuluyor'}
+        <div className="w-12 h-px bg-linear-to-l from-transparent to-white/20"></div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useAppStore } from '@/stores/useAppStore';
+import { useLobbyStore } from '@/stores/useLobbyStore';
 import { MenuCard } from '@/components/ui/MenuCard';
 import { FieldInput } from '@/components/ui/FieldInput';
 import { SelectorButton } from '@/components/ui/SelectorButton';
@@ -33,6 +34,7 @@ export function MenuScreen() {
   ];
 
   const startSoloGame = () => {
+    useLobbyStore.getState().resetLobby();
     tryAutoFullscreen();
     setScreen('game');
   };

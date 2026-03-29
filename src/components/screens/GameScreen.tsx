@@ -43,7 +43,7 @@ export function GameScreen() {
     engineRef.current = null;
     activeEngine = null;
     useGameStore.getState().reset();
-    setScreen('lobby');
+    setScreen(myRole === 'solo' ? 'menu' : 'lobby');
   }, [myRole, lobbyState, setScreen]);
 
   const initEngine = useCallback(() => {
