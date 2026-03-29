@@ -243,6 +243,30 @@ export function GameScreen() {
   }, [screen, initEngine]);
 
   useEffect(() => {
+    if (screen !== 'game') return;
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      window.history.pushState(null, '', window.location.href);
+
+      const store = useGameStore.getState();
+      if (!store.paused && engineRef.current) {
+        store.setPaused(true);
+        if (useLobbyStore.getState().myRole === 'solo') {
+          engineRef.current.pause();
+        }
+      }
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [screen]);
+
+  useEffect(() => {
     if (screen === 'game' && myRole !== 'solo' && engineRef.current) {
       const players = [
         ...lobbyState.red.map((p, i) => ({
