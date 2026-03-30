@@ -47,7 +47,7 @@ import {
 import { resetPositions } from './systems/kickoffSystem';
 import { applyPlayerMovement } from './physics/playerMovement';
 import { doKick } from './systems/kickSystem';
-import { updateBot } from './ai/botAI';
+import { getBotInput } from './ai/botAI';
 import { render } from './renderer/GameRenderer';
 import { KeyboardInput } from './input/KeyboardInput';
 import { TouchInput } from './input/TouchInput';
@@ -148,7 +148,7 @@ export class GameEngine {
     const p1 = createPlayer(ox + fw * 0.28, oy + fh / 2, pr, 'red', true);
     p1.isMe = true;
     const players: PlayerState[] = [p1];
-    if (this.config.diff !== 'none') {
+    if (!this.config.isTraining) {
       players.push(
         createPlayer(ox + fw * 0.72, oy + fh / 2, pr, 'blue', false),
       );
@@ -170,21 +170,21 @@ export class GameEngine {
       over: false,
       goalCooldown: 0,
       concededTeam: null,
-      timeLeft: this.config.diff === 'none' ? 0 : this.config.time,
-      timerRunning: this.config.diff === 'none' ? false : this.config.time > 0,
+      timeLeft: this.config.isTraining ? 0 : this.config.time,
+      timerRunning: this.config.isTraining ? false : this.config.time > 0,
       overtime: false,
       scoreRed: 0,
       scoreBlue: 0,
-      goalLimit: this.config.diff === 'none' ? 0 : (this.config.goalLimit || 0),
+      goalLimit: this.config.isTraining ? 0 : (this.config.goalLimit || 0),
       particles: [],
       ball: createBall(ox + fw / 2, oy + fh / 2, br),
       players,
       input: { dx: 0, dy: 0, kick: false, kickCharge: 0, kickHeld: false },
       kickCharging: false,
       prevInputDir: null,
-      kickoff: { active: this.config.diff !== 'none', team: 'red' },
+      kickoff: { active: !this.config.isTraining, team: 'red' },
       isMulti: false,
-      isTraining: this.config.diff === 'none',
+      isTraining: this.config.isTraining,
     };
     this.isMulti = false;
     this.keyboardInput.setGameState(this.gameState);
@@ -562,8 +562,11 @@ export class GameEngine {
         if (pl.kickFlash > 0) pl.kickFlash--;
       });
       if (gs.isMulti && this.isHost) this.applyRemoteInputsToPlayers();
-      if (!gs.isMulti && this.config.diff !== 'none' && gs.players.length > 1) {
-        updateBot(gs.players[1], gs, this.config.diff);
+      if (!gs.isMulti && !this.config.isTraining && gs.players.length > 1) {
+        const bot = gs.players[1];
+        const botInput = getBotInput(bot, gs);
+        applyPlayerMovement(bot, botInput, gs);
+        if (botInput.kickHeld) doKick(bot, gs, botInput);
       }
       this.moveAllPlayers();
       this.processBallAndCollisions();
@@ -573,14 +576,17 @@ export class GameEngine {
     }
 
     applyPlayerMovement(localPlayer, gs.input, gs);
-    if (gs.input.kickHeld) doKick(localPlayer, gs);
+    if (gs.input.kickHeld) doKick(localPlayer, gs, gs.input);
     gs.players.forEach((pl: PlayerState) => {
       if (pl.kickFlash > 0) pl.kickFlash--;
     });
 
     if (gs.isMulti && this.isHost) this.applyRemoteInputsToPlayers();
-    if (!gs.isMulti && this.config.diff !== 'none' && gs.players.length > 1) {
-      updateBot(gs.players[1], gs, this.config.diff);
+    if (!gs.isMulti && !this.config.isTraining && gs.players.length > 1) {
+      const bot = gs.players[1];
+      const botInput = getBotInput(bot, gs);
+      applyPlayerMovement(bot, botInput, gs);
+      if (botInput.kickHeld) doKick(bot, gs, botInput);
     }
 
     this.moveAllPlayers();

@@ -1,5 +1,4 @@
 import { PitchSize } from '@/config/pitchConfigs';
-import { BotDifficulty } from '@/config/botDifficulty';
 import { NormalizedBall, NormalizedPlayer } from '@/multiplayer/types';
 
 export interface BallState {
@@ -106,9 +105,9 @@ export interface GameState {
 export interface GameConfig {
   pitch: PitchSize;
   time: number;
-  diff: BotDifficulty;
   nick: string;
-  goalLimit?: number;
+  goalLimit: number;
+  isTraining: boolean;
 }
 
 export interface MultiPlayerInfo {

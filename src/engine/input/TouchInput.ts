@@ -59,7 +59,7 @@ export class TouchInput {
           this.kId = t.identifier;
           this.gs.input.kickHeld = true;
           if (this.getLocalPlayer) {
-            doKick(this.getLocalPlayer(), this.gs);
+            doKick(this.getLocalPlayer(), this.gs, this.gs.input);
           }
         }
       } else {

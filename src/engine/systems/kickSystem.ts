@@ -1,4 +1,4 @@
-import { PlayerState, GameState } from '../types';
+import { PlayerState, GameState, InputState } from '../types';
 import {
   KICK_POWER, JOYSTICK_DEAD,
   POWER_SHOT_START, POWER_SHOT_MAX,
@@ -6,7 +6,7 @@ import {
 } from '@/config/constants';
 import { spawnParticles } from './particleSystem';
 
-export function doKick(player: PlayerState | null, gs: GameState): void {
+export function doKick(player: PlayerState | null, gs: GameState, input: InputState): void {
   if (!player) return;
 
   const ball = gs.ball;
@@ -39,8 +39,8 @@ export function doKick(player: PlayerState | null, gs: GameState): void {
 
   if (isFirstTouch) {
     // First touch: absorb + redirect
-    const inX = gs.input.dx;
-    const inY = gs.input.dy;
+    const inX = input.dx;
+    const inY = input.dy;
     const inSpd = Math.hypot(inX, inY);
     const hasDir = inSpd > JOYSTICK_DEAD;
 
@@ -61,14 +61,14 @@ export function doKick(player: PlayerState | null, gs: GameState): void {
 
     ball.vx = ball.vx * 0.15 + rdx * basePwr * 0.88 * powerMult;
     ball.vy = ball.vy * 0.15 + rdy * basePwr * 0.88 * powerMult;
-    spawnParticles(gs, ball.x, ball.y, '#00ffcc');
+    spawnParticles(gs, ball.x, ball.y, player.team === 'red' ? '#00ffcc' : '#00e5ff');
   } else {
     // Normal kick / power shot
     ball.vx += (kx / km) * basePwr * powerMult;
     ball.vy += (ky / km) * basePwr * powerMult;
   }
 
-  ball.lastKickedBy = 'red';
+  ball.lastKickedBy = player.team;
   player.kickCd = 16;
   player.moveDuration = 0;
 

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { PitchSize } from '@/config/pitchConfigs';
-import type { BotDifficulty } from '@/config/botDifficulty';
 
 export type ScreenId = 'menu' | 'create' | 'join' | 'lobby' | 'game';
 
@@ -9,7 +8,8 @@ interface AppConfig {
   nick: string;
   pitch: PitchSize;
   time: number;
-  diff: BotDifficulty;
+  goals: number;
+  isTraining: boolean;
 }
 
 interface AppState {
@@ -27,7 +27,8 @@ export const useAppStore = create<AppState>()(
         nick: 'Oyuncu',
         pitch: 'medium',
         time: 180,
-        diff: 'medium',
+        goals: 5,
+        isTraining: false,
       },
       setScreen: (screen) => set({ screen }),
       setConfig: (partial) =>

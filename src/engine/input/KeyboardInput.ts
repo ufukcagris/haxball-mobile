@@ -21,7 +21,7 @@ export class KeyboardInput {
     if ((e.key === ' ' || e.key === 'x') && this.gs && !this.gs.over && !e.repeat) {
       this.gs.input.kickHeld = true;
       if (this.getLocalPlayer) {
-        doKick(this.getLocalPlayer(), this.gs);
+        doKick(this.getLocalPlayer(), this.gs, this.gs.input);
       }
       e.preventDefault();
     }

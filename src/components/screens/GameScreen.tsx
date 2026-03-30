@@ -56,9 +56,9 @@ export function GameScreen() {
     const engine = new GameEngine(canvas, {
       pitch: config.pitch,
       time: config.time,
-      diff: config.diff,
       nick: config.nick,
-      goalLimit: lobbyState.settings.goals,
+      goalLimit: myRole === 'solo' ? config.goals : lobbyState.settings.goals,
+      isTraining: config.isTraining,
     });
 
     engine.onHUDUpdate = (data) => {
@@ -103,10 +103,7 @@ export function GameScreen() {
       }
     };
 
-    engine.keyboardInput.attach(
-      togglePause,
-      () => engine.getLocalPlayer(),
-    );
+    engine.keyboardInput.attach(togglePause, () => engine.getLocalPlayer());
     engine.keyboardInput.setGameState(engine.getState());
 
     if (zoneRef.current && jBaseRef.current && jKnobRef.current) {
@@ -121,7 +118,7 @@ export function GameScreen() {
     if (myRole === 'solo') {
       useGameStore
         .getState()
-        .setNicks(config.nick, config.diff === 'none' ? '—' : 'BOT');
+        .setNicks(config.nick, config.isTraining ? '—' : 'BOT');
       engine.initSoloGame();
     } else {
       const redNick =
@@ -333,12 +330,12 @@ export function GameScreen() {
         <div className='menu-bg fixed inset-0' />
         <div className='my-auto flex flex-col items-center gap-6 w-full shrink-0 py-6 z-1'>
           <div className='text-[1.2rem] font-bold text-white z-10 text-center leading-tight'>
-          Baglanti Kesildi
-          <br />
-          <span className='text-[0.9rem] opacity-60 font-normal'>
-            Oda kapatildi veya host ayrildi
-          </span>
-        </div>
+            Baglanti Kesildi
+            <br />
+            <span className='text-[0.9rem] opacity-60 font-normal'>
+              Oda kapatildi veya host ayrildi
+            </span>
+          </div>
           <div className='flex flex-col gap-3 w-[240px] z-10'>
             <PlayButton
               onClick={() => {
@@ -380,8 +377,6 @@ export function GameScreen() {
 
       <div ref={goalFlashRef} className='goal-flash' />
       <JoystickZone zoneRef={zoneRef} jBaseRef={jBaseRef} jKnobRef={jKnobRef} />
-
-
 
       {!showFullLobby && (
         <PauseOverlay
