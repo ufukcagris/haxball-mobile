@@ -5,10 +5,18 @@ export class PeerManager {
   private _peerId: string | null = null;
   private isConnecting = false;
 
-  get peerId(): string | null { return this._peerId; }
-  get isReady(): boolean { return !!this.peer && !this.peer.destroyed && !!this._peerId; }
+  get peerId(): string | null {
+    return this._peerId;
+  }
+  get isReady(): boolean {
+    return !!this.peer && !this.peer.destroyed && !!this._peerId;
+  }
 
-  init(onOpen: (id: string) => void, onError: (err: string) => void, onConnection?: (conn: DataConnection) => void): void {
+  init(
+    onOpen: (id: string) => void,
+    onError: (err: string) => void,
+    onConnection?: (conn: DataConnection) => void,
+  ): void {
     if (onConnection && this.peer) {
       this.peer.on('connection', (conn) => {
         console.log('[PeerManager] Incoming connection from:', conn.peer);
@@ -22,7 +30,6 @@ export class PeerManager {
     }
 
     if (this.isConnecting) {
-      // If already connecting, we wait for the existing peer instance to open
       const check = setInterval(() => {
         if (this.isReady && this._peerId) {
           clearInterval(check);
@@ -33,40 +40,65 @@ export class PeerManager {
     }
 
     this.isConnecting = true;
-    const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const isSecure =
+      typeof window !== 'undefined' && window.location.protocol === 'https:';
     console.log('[PeerManager] Initializing Peer...', { isSecure });
-    
+
+    const turnUrl = process.env.NEXT_PUBLIC_TURN_URL;
+    const turnUsername = process.env.NEXT_PUBLIC_TURN_USERNAME;
+    const turnCredential = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+
+    const iceServers: Array<{
+      urls: string;
+      username?: string;
+      credential?: string;
+    }> = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' },
+      { urls: 'stun:stun.services.mozilla.com' },
+    ];
+
+    if (turnUrl && turnUsername && turnCredential) {
+      const domainMatch = turnUrl.match(/turn:([^:]+)/);
+      const domain = domainMatch
+        ? domainMatch[1]
+        : turnUrl.replace('turn:', '').split(':')[0];
+
+      iceServers.push({
+        urls: `turn:${domain}:80`,
+        username: turnUsername,
+        credential: turnCredential,
+      });
+      iceServers.push({
+        urls: `turn:${domain}:80?transport=tcp`,
+        username: turnUsername,
+        credential: turnCredential,
+      });
+      iceServers.push({
+        urls: `turn:${domain}:443`,
+        username: turnUsername,
+        credential: turnCredential,
+      });
+      iceServers.push({
+        urls: `turns:${domain}:443?transport=tcp`,
+        username: turnUsername,
+        credential: turnCredential,
+      });
+    }
+
     this.peer = new Peer({
       secure: isSecure,
-      debug: 1,
+      debug: 3,
       config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' },
-          { urls: 'stun:stun.services.mozilla.com' },
-          {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          }
-        ],
+        iceServers: iceServers,
         iceTransportPolicy: 'all',
         sdpSemantics: 'unified-plan',
-        iceCandidatePoolSize: 10
-      }
+        iceCandidatePoolSize: 10,
+      },
     });
 
     this.peer.on('open', (id) => {
@@ -90,9 +122,16 @@ export class PeerManager {
     }
   }
 
-  connect(peerId: string, metadata?: Record<string, unknown>): DataConnection | null {
+  connect(
+    peerId: string,
+    metadata?: Record<string, unknown>,
+  ): DataConnection | null {
     if (!this.peer || !this.isReady) return null;
-    return this.peer.connect(peerId, { metadata });
+    return this.peer.connect(peerId, {
+      metadata,
+      reliable: true,
+      serialization: 'json',
+    });
   }
 
   destroy(): void {
