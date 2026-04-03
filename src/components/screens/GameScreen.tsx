@@ -154,10 +154,7 @@ export function GameScreen() {
       const guestManager = getSharedGuest();
 
       if (myRole === 'host' && hostManager) {
-        let netSendCounter = 0;
         engine.onSendGameState = () => {
-          netSendCounter++;
-          if (netSendCounter % 2 !== 0) return;
           const gs = engine.getNormalizedState();
           if (gs) hostManager.broadcastGameState({ type: 'game_state', ...gs });
         };

@@ -555,12 +555,14 @@ export class GameEngine {
         p.chatBubble.timer--;
         if (p.chatBubble.timer <= 0) p.chatBubble = undefined;
       }
+      if (p.kickFlash > 0) p.kickFlash--;
     });
 
-    if (!localPlayer) {
-      gs.players.forEach((pl: PlayerState) => {
-        if (pl.kickFlash > 0) pl.kickFlash--;
-      });
+    if (isMaster) {
+      if (localPlayer) {
+        applyPlayerMovement(localPlayer, gs.input, gs);
+        if (gs.input.kickHeld) doKick(localPlayer, gs, gs.input);
+      }
       if (gs.isMulti && this.isHost) this.applyRemoteInputsToPlayers();
       if (!gs.isMulti && !this.config.isTraining && gs.players.length > 1) {
         const bot = gs.players[1];
@@ -570,29 +572,12 @@ export class GameEngine {
       }
       this.moveAllPlayers();
       this.processBallAndCollisions();
-      this.networkSync();
-      if (gs.goalCooldown === 0 && isMaster) this.checkGoalScored();
-      return;
+      if (gs.goalCooldown === 0) this.checkGoalScored();
+    } else {
+      updateParticles(gs);
     }
 
-    applyPlayerMovement(localPlayer, gs.input, gs);
-    if (gs.input.kickHeld) doKick(localPlayer, gs, gs.input);
-    gs.players.forEach((pl: PlayerState) => {
-      if (pl.kickFlash > 0) pl.kickFlash--;
-    });
-
-    if (gs.isMulti && this.isHost) this.applyRemoteInputsToPlayers();
-    if (!gs.isMulti && !this.config.isTraining && gs.players.length > 1) {
-      const bot = gs.players[1];
-      const botInput = getBotInput(bot, gs);
-      applyPlayerMovement(bot, botInput, gs);
-      if (botInput.kickHeld) doKick(bot, gs, botInput);
-    }
-
-    this.moveAllPlayers();
-    this.processBallAndCollisions();
     this.networkSync();
-    if (gs.goalCooldown === 0 && isMaster) this.checkGoalScored();
     this.emitHUD();
   }
 

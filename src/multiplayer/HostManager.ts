@@ -185,8 +185,6 @@ export class HostManager {
   }
 
   broadcastGameState(stateMsg: NetworkMessage): void {
-    this.netSendCounter++;
-    if (this.netSendCounter % 2 !== 0) return;
     this.sendToAll(stateMsg);
   }
 
